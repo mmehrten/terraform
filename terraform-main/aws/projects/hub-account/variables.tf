@@ -22,6 +22,11 @@ variable "private-subnets" {
   type        = map(string)
   description = "A mapping of Availability Zone to the CIDR block for the subnet in that AZ."
 }
+variable "enable-transitgateway" {
+  type        = bool
+  default     = true
+  description = "Whether or not to include a Transit Gateway"
+}
 variable "pgp-key" {
   type        = string
   description = "Optional PGP key if creating a console user"

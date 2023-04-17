@@ -1,7 +1,7 @@
 variable "region" {
   type        = string
   description = "The region to create resources in."
-  default = "us-east-1"
+  default     = "us-east-1"
 }
 variable "partition" {
   type        = string

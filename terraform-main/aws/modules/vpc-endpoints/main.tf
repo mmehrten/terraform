@@ -61,11 +61,21 @@ locals {
   route_53_aliases = var.create-route53-zones ? {
     for o in flatten([
       for key, value in aws_vpc_endpoint.access :
-      { "zone_id" : value.dns_entry[0].hosted_zone_id, "dns_name" : value.dns_entry[0].dns_name, "service_name" : "${key}.${var.region}.amazonaws.com" }
+      {
+        "zone_id" : value.dns_entry[0].hosted_zone_id,
+        "dns_name" : value.dns_entry[0].dns_name,
+        "service_name" : "${key}.${var.region}.amazonaws.com",
+        "network_interface_ids" : value.network_interface_ids
+      }
       ]
     ) :
     o.service_name => o
   } : {}
+}
+
+data "aws_network_interface" "interface_ips" {
+  for_each = { for o in flatten([for k, v in local.route_53_aliases : [for i in v.network_interface_ids : { "key" : "${k}_${i}", "value" : i }]]) : o.key => o.value }
+  id       = each.value
 }
 
 resource "aws_route53_zone" "main" {
@@ -85,12 +95,18 @@ resource "aws_route53_record" "main" {
   for_each = local.route_53_aliases
   zone_id  = aws_route53_zone.main[each.key].zone_id
   name     = each.value.service_name
-  type     = "A"
-  alias {
-    zone_id                = each.value.zone_id
-    name                   = each.value.dns_name
-    evaluate_target_health = true
-  }
+  # Commercial:
+  # type     = "A"
+  # alias {
+  #   zone_id                = each.value.zone_id
+  #   name                   = each.value.dns_name
+  #   evaluate_target_health = true
+  # }
+
+  # GovCloud:
+  type    = "A"
+  ttl     = 300
+  records = [for i in each.value.network_interface_ids : data.aws_network_interface.interface_ips["${each.key}_${i}"].private_ip]
 }
 
 // Create an org-wide DNS hosted zone for cross-account resource sharing when needed
