@@ -12,6 +12,8 @@ data "aws_ec2_transit_gateway" "tgw" {
   }
 }
 
+
+# TODO: manage both child govcloud and commercial accounts
 module "account" {
   # Only create an account if we're configured to
   count = var.create-account == true ? 1 : 0
@@ -20,9 +22,10 @@ module "account" {
   account-id         = var.root-account-id
   app-shorthand-name = var.app-shorthand-name
   app-name           = var.app-name
+  partition          = var.partition
   // Use organization root to provision child
-  terraform-role = local.terraform-role
-  tags           = local.tags
+  terraform-role = var.terraform-role
+  tags           = var.tags
   // Don't use region in account base name, since account can span regions
   base-name = var.app-shorthand-name
 
@@ -31,65 +34,113 @@ module "account" {
   source        = "../../modules/organization-child"
 }
 
+provider "aws" {
+  region = var.region
+  assume_role {
+    role_arn = var.create-account == true ? "arn:${var.partition}:iam::${local.child-account-id}:role/OrganizationAccountAccessRole" : "arn:${var.partition}:iam::${local.child-account-id}:role/Admin"
+  }
+  default_tags { tags = var.tags }
+  alias = "spoke"
+}
+
 locals {
-  child-account-id     = var.create-account == true ? module.account[0].outputs.account-id : var.root-account-id
-  child-terraform-role = var.create-account == true ? module.account[0].outputs.terraform-role-arn : local.terraform-role
+  child-account-id = var.create-account == true ? module.account[0].outputs.account-id : var.child-account-id
+}
+
+module "child-terraform-role" {
+  count              = var.create-account == true ? 1 : 0
+  providers          = { aws = aws.spoke, aws.root = aws }
+  region             = var.region
+  account-id         = local.child-account-id
+  app-shorthand-name = var.app-shorthand-name
+  app-name           = var.app-name
+  # Use the child account admin role to provision the Terraform role
+  terraform-role = "arn:aws:iam::${local.child-account-id}:role/OrganizationAccountAccessRole"
+  tags           = var.tags
+  base-name      = local.base-name
+  partition      = var.partition
+
+  # Allow the root account Terraform role to assume the child account Terraform role
+  runner-role-arns = [
+    var.terraform-role,
+    "arn:${var.partition}:iam::${var.root-account-id}:role/Admin",
+    "arn:${var.partition}:iam::${var.root-account-id}:role/Terraform",
+  ]
+  source = "../../modules/terraform-role"
+}
+
+locals {
+  child-terraform-role = var.create-account == true ? module.child-terraform-role[0].outputs.arn : var.terraform-role
 }
 
 module "vpc" {
+  providers          = { aws = aws.spoke, aws.root = aws }
   region             = var.region
   account-id         = local.child-account-id
   app-shorthand-name = var.app-shorthand-name
   app-name           = var.app-name
   terraform-role     = local.child-terraform-role
-  tags               = local.tags
+  tags               = var.tags
   base-name          = local.base-name
+  partition          = var.partition
 
-  public-subnets  = local.public-subnets
-  private-subnets = local.private-subnets
-  cidr-block      = local.cidr-block
+  public-subnets  = var.public-subnets
+  private-subnets = var.private-subnets
+  cidr-block      = var.cidr-block
   source          = "../../modules/vpc"
 }
 
-# TODO: Use peering attachments
 module "transit-gateway-attachment" {
+  count              = var.enable-transitgateway == true ? 1 : 0
+  depends_on         = [module.vpc]
+  providers          = { aws = aws.spoke, aws.root = aws }
   region             = var.region
   account-id         = local.child-account-id
   app-shorthand-name = var.app-shorthand-name
   app-name           = var.app-name
   terraform-role     = local.child-terraform-role
-  tags               = local.tags
+  tags               = var.tags
   base-name          = local.base-name
+  partition          = var.partition
 
   transit-gateway-id = data.aws_ec2_transit_gateway.tgw.id
+  root-account-id    = var.root-account-id
+  root-region        = var.root-region
   vpc-id             = module.vpc.outputs.vpc-id
-  route-table-id     = module.vpc.outputs.private-route-table-id
   subnet-ids         = [for o in values(module.vpc.outputs.private-subnet-ids) : o]
+  cidr-block         = var.cidr-block
   source             = "../../modules/transit-gateway-attachment"
 }
 
-module "console-user" {
+module "redshift" {
+  providers          = { aws = aws.spoke, aws.root = aws }
   region             = var.region
   account-id         = local.child-account-id
   app-shorthand-name = var.app-shorthand-name
   app-name           = var.app-name
   terraform-role     = local.child-terraform-role
-  tags               = local.tags
+  tags               = var.tags
   base-name          = local.base-name
+  partition          = var.partition
 
-  pgp-key = var.pgp-key
-  source  = "../../modules/console-user"
+  vpc-id          = module.vpc.outputs.vpc-id
+  database-name   = "dev"
+  master-password = var.redshift-master-password
+  source          = "../../modules/redshift"
 }
 
-output "spoke-account-id" {
-  value = module.account.outputs.account-id
-}
-output "password" {
-  value = module.console-user.outputs.console
-}
-output "access-key-id" {
-  value = module.console-user.outputs.access_key_id
-}
-output "secret-access-key" {
-  value = module.console-user.outputs.secret_access_key
+module "s3-data" {
+  providers          = { aws = aws.spoke, aws.root = aws }
+  region             = var.region
+  account-id         = local.child-account-id
+  app-shorthand-name = var.app-shorthand-name
+  app-name           = var.app-name
+  terraform-role     = local.child-terraform-role
+  tags               = var.tags
+  base-name          = local.base-name
+  partition          = var.partition
+
+  bucket-name = "${local.base-name}.s3.analytics"
+  versioning  = false
+  source      = "../../modules/s3"
 }

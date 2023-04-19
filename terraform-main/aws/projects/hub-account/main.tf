@@ -15,7 +15,7 @@ module "terraform" {
   base-name          = local.base-name
   partition          = var.partition
 
-  runner-role-arns = ["arn:aws:iam::${var.account-id}:role/Admin"]
+  runner-role-arns = ["arn:${var.partition}:iam::${var.account-id}:role/Admin"]
   source           = "../../modules/terraform-infra"
 }
 
@@ -42,7 +42,7 @@ module "organization-root" {
   terraform-role     = var.terraform-role
   tags               = var.tags
   base-name          = local.base-name
-  logs-bucket        = module.s3-logs.outputs.arn
+  logs-bucket        = module.s3-logs.outputs.name
   partition          = var.partition
 
   source = "../../modules/organization-root"
@@ -112,62 +112,3 @@ module "transit-gateway" {
   source     = "../../modules/transit-gateway"
 }
 
-module "s3-infra" {
-  region             = var.region
-  account-id         = var.account-id
-  app-shorthand-name = var.app-shorthand-name
-  app-name           = var.app-name
-  terraform-role     = var.terraform-role
-  tags               = var.tags
-  base-name          = local.base-name
-  partition          = var.partition
-
-  bucket-name = "${local.base-name}.s3.infra"
-  versioning  = false
-  source      = "../../modules/s3"
-}
-
-module "s3-data" {
-  region             = var.region
-  account-id         = var.account-id
-  app-shorthand-name = var.app-shorthand-name
-  app-name           = var.app-name
-  terraform-role     = var.terraform-role
-  tags               = var.tags
-  base-name          = local.base-name
-  partition          = var.partition
-
-  bucket-name = "${local.base-name}.s3.analytics"
-  versioning  = false
-  source      = "../../modules/s3"
-}
-
-module "redshift" {
-  region             = var.region
-  account-id         = var.account-id
-  app-shorthand-name = var.app-shorthand-name
-  app-name           = var.app-name
-  terraform-role     = var.terraform-role
-  tags               = var.tags
-  base-name          = local.base-name
-  partition          = var.partition
-
-  vpc-id          = module.vpc.outputs.vpc-id
-  database-name   = "dev"
-  master-password = var.redshift-master-password
-  source          = "../../modules/redshift"
-}
-
-module "kinesis" {
-  region             = var.region
-  account-id         = var.account-id
-  app-shorthand-name = var.app-shorthand-name
-  app-name           = var.app-name
-  terraform-role     = var.terraform-role
-  tags               = var.tags
-  base-name          = local.base-name
-  partition          = var.partition
-
-  name   = "demo_stream"
-  source = "../../modules/kinesis-stream"
-}

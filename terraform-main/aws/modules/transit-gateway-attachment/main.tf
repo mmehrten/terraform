@@ -143,25 +143,8 @@ resource "aws_route" "root-peer" {
 # Peer the PHZ from the core account to the peer account
 locals {
   service-endpoints = {
-    for o in [
-      # "airflow.api",
-      # "airflow.env",
-      # "airflow.ops",
-      "ecr.api",
-      "ecr.dkr",
-      "kms",
-      "logs",
-      "monitoring",
-      "sqs",
-      "elasticmapreduce",
-      "ecs",
-      "rds",
-      "secretsmanager",
-      "ssm",
-      "ec2messages",
-      "ssmmessages",
-    ] :
-    o => "${o}.${var.region}.amazonaws.com"
+    for k, v in var.endpoints :
+    o => "${coalesce(k, v)}.${var.region}.amazonaws.com"
   }
 }
 data "aws_route53_zone" "main" {

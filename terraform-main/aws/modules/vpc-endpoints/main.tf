@@ -7,10 +7,6 @@ data "aws_subnet" "main" {
   id       = each.value
 }
 
-locals {
-  endpoints_map = { for o in var.endpoints : o => o }
-}
-
 resource "aws_security_group" "endpoint-security-group" {
   name        = "${var.base-name}.sg.endpoint"
   description = "Security group which contains relationships with all VPC endpoints."
@@ -40,9 +36,9 @@ resource "aws_security_group" "endpoint-security-group" {
 }
 
 resource "aws_vpc_endpoint" "access" {
-  for_each            = local.endpoints_map
+  for_each            = var.endpoints
   vpc_id              = var.vpc-id
-  service_name        = "com.amazonaws.${var.region}.${each.value}"
+  service_name        = "com.amazonaws.${var.region}.${each.key}"
   vpc_endpoint_type   = "Interface"
   private_dns_enabled = !var.create-route53-zones
   security_group_ids  = [aws_security_group.endpoint-security-group.id]
@@ -53,7 +49,7 @@ resource "aws_vpc_endpoint" "access" {
   }
 
   tags = {
-    Name = "${var.base-name}.vpce.${each.value}"
+    Name = "${var.base-name}.vpce.${each.key}"
   }
 }
 
@@ -65,7 +61,16 @@ locals {
         "zone_id" : value.dns_entry[0].hosted_zone_id,
         "dns_name" : value.dns_entry[0].dns_name,
         "service_name" : "${key}.${var.region}.amazonaws.com",
-        "network_interface_ids" : value.network_interface_ids
+        "network_interface_ids" : value.network_interface_ids,
+        # Transform vpce-####.service.us-gov-west-1.vpce.amazonaws.com into service.us-gov-west-1.amazonaws.com
+        "dns_apex" : join(
+          ".",
+          slice(
+            [for i in split(".", value.dns_entry[0].dns_name) : i if i != "vpce"],
+            1,
+            length(split(".", value.dns_entry[0].dns_name)) - 1
+          )
+        )
       }
       ]
     ) :
@@ -81,7 +86,7 @@ data "aws_network_interface" "interface_ips" {
 resource "aws_route53_zone" "main" {
   for_each = local.route_53_aliases
 
-  name = each.value.service_name
+  name = each.value.dns_apex
   vpc {
     vpc_id = var.vpc-id
   }
@@ -94,7 +99,7 @@ resource "aws_route53_zone" "main" {
 resource "aws_route53_record" "main" {
   for_each = local.route_53_aliases
   zone_id  = aws_route53_zone.main[each.key].zone_id
-  name     = each.value.service_name
+  name     = each.value.dns_apex
   # Commercial:
   # type     = "A"
   # alias {

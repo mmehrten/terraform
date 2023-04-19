@@ -13,31 +13,55 @@ data "aws_ec2_transit_gateway" "tgw" {
 }
 
 module "account" {
+  # Only create an account if we're configured to
+  count = var.create-account == true ? 1 : 0
+
   region             = var.region
   account-id         = var.root-account-id
   app-shorthand-name = var.app-shorthand-name
   app-name           = var.app-name
+  partition          = var.partition
   // Use organization root to provision child
-  terraform-role = var.terraform-role
-  tags           = var.tags
+  terraform-role = local.terraform-role
+  tags           = local.tags
   // Don't use region in account base name, since account can span regions
   base-name = var.app-shorthand-name
 
   account-name  = "${var.app-shorthand-name}.account"
   account-owner = var.owner-email
-  source        = "../../terraform-main/aws/modules/organization-child"
-}
-
-locals {
-  child-account-id     = module.account.outputs.account-id
-  child-terraform-role = module.account.outputs.terraform-role-arn
+  source        = "../../modules/organization-child"
 }
 
 provider "aws" {
   region = var.region
-  assume_role { role_arn = local.child-terraform-role }
+  assume_role { role_arn = "arn:aws:iam::${local.child-account-id}:role/OrganizationAccountAccessRole" }
   default_tags { tags = var.tags }
   alias = "spoke"
+}
+
+locals {
+  child-account-id     = var.create-account == true ? module.account[0].outputs.account-id : var.root-account-id
+  child-terraform-role = var.create-account == true ? module.account[0].outputs.terraform-role-arn : local.terraform-role
+}
+
+module "child-terraform-role" {
+  providers          = { aws = aws.spoke, aws.root = aws }
+  region             = var.region
+  account-id         = var.account-id
+  app-shorthand-name = var.app-shorthand-name
+  app-name           = var.app-name
+  # Use the child account admin role to provision the Terraform role
+  terraform-role = "arn:aws:iam::${local.child-account-id}:role/OrganizationAccountAccessRole"
+  tags           = var.tags
+  base-name      = local.base-name
+
+  # Allow the root account Terraform role to assume the child account Terraform role
+  runner-role-arns = [
+    var.terraform-role,
+    "arn:aws:iam::${var.root-account-id}:role/Admin",
+    "arn:aws:iam::${var.root-account-id}:role/Terraform",
+  ]
+  source = "../../modules/terraform-role"
 }
 
 module "vpc" {

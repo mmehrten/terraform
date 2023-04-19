@@ -18,7 +18,6 @@ variable "region" {
 variable "partition" {
   type        = string
   description = "The partition to create resources in."
-  default     = "aws"
 }
 variable "account-id" {
   type        = string
@@ -43,4 +42,31 @@ variable "tags" {
 variable "base-name" {
   type        = string
   description = "The base name to create new resources with (e.g. {app_shorthand}.{region})."
+}
+variable "endpoints" {
+  type        = map(string)
+  description = "A list of the services to create interface endpoints for."
+  default = {
+    # "airflow.api" = null,
+    # "airflow.env" = null,
+    # "airflow.ops" = null,
+    "ecr.api"          = "api.ecr",
+    "ecr.dkr"          = "dkr.ecr",
+    "kms"              = null,
+    "logs"             = null,
+    "monitoring"       = null,
+    "sqs"              = null,
+    "elasticmapreduce" = null,
+    "ecs"              = null,
+    "rds"              = null,
+    "secretsmanager"   = null,
+    "ssm"              = null,
+    "ec2messages"      = null,
+    "ssmmessages"      = null,
+    "kinesis-streams"  = "kinesis",
+    "kinesis-firehose" = "firehose",
+    "execute-api"      = null,
+    "redshift"         = null,
+    "glue"             = null,
+  }
 }
