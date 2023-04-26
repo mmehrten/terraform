@@ -48,7 +48,7 @@ resource "aws_redshift_subnet_group" "main" {
 
 
 resource "aws_iam_role" "main" {
-  name               = "${var.base-name}.iam.role.redshift"
+  name               = "${var.app-shorthand-name}.iam.role.redshift"
   assume_role_policy = <<EOF
 {
  "Version": "2012-10-17",
@@ -68,7 +68,7 @@ EOF
 
 
 resource "aws_iam_role_policy" "main" {
-  name   = "${var.base-name}.iam.role.redshift"
+  name   = "${var.app-shorthand-name}.iam.role.redshift"
   role   = aws_iam_role.main.id
   policy = <<EOF
 {

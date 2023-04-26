@@ -3,13 +3,13 @@
 */
 
 resource "aws_iam_role_policy" "main" {
-  name   = "${var.base-name}.iam.role.lambda"
+  name   = "${var.app-shorthand-name}.iam.role.lambda"
   role   = aws_iam_role.main.id
   policy = var.policy
 }
 
 resource "aws_iam_role" "main" {
-  name                = "${var.base-name}.iam.role.lambda"
+  name                = "${var.app-shorthand-name}.iam.role.lambda"
   managed_policy_arns = ["arn:${var.partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"]
   assume_role_policy  = <<EOF
 {
