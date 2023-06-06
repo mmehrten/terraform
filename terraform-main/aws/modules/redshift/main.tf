@@ -87,8 +87,30 @@ resource "aws_iam_role_policy" "main" {
         {
             "Effect": "Allow",
             "Action": [
-                "kms:Decrypt",
-                "kms:GenerateKeyData"
+                "kms:*"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "kinesis:*"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "lambda:InvokeFunction"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "secretsmanager:Get*",
+                "secretsmanager:List*",
+                "secretsmanager:Describe*"
             ],
             "Resource": "*"
         },

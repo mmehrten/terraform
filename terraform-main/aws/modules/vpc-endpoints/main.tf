@@ -38,7 +38,7 @@ resource "aws_security_group" "endpoint-security-group" {
 resource "aws_vpc_endpoint" "access" {
   for_each            = var.endpoints
   vpc_id              = var.vpc-id
-  service_name        = "com.amazonaws.${var.region}.${each.key}"
+  service_name        = each.value == null ? "com.amazonaws.${var.region}.${each.key}" : format(each.value.service, var.region)
   vpc_endpoint_type   = "Interface"
   private_dns_enabled = !var.create-route53-zones
   security_group_ids  = [aws_security_group.endpoint-security-group.id]
@@ -67,7 +67,8 @@ locals {
           ".",
           slice(
             [for i in split(".", value.dns_entry[0].dns_name) : i if i != "vpce"],
-            1,
+            # We only want the {service}.{region}.amazonaws.com portion
+            length(split(".", value.dns_entry[0].dns_name)) - 5,
             length(split(".", value.dns_entry[0].dns_name)) - 1
           )
         )
@@ -97,9 +98,14 @@ resource "aws_route53_zone" "main" {
 }
 
 resource "aws_route53_record" "main" {
-  for_each = local.route_53_aliases
-  zone_id  = aws_route53_zone.main[each.key].zone_id
-  name     = each.value.dns_apex
+  for_each = {
+    for o in flatten([
+      for k, v in local.route_53_aliases: [
+        for id in v.network_interface_ids: {"key": k, "id": id, "value": v}
+      ]
+    ]): "${o.key}_${o.id}" => o}
+  zone_id  = aws_route53_zone.main[each.value.key].zone_id
+  name     = each.value.value.dns_apex
   # Commercial:
   # type     = "A"
   # alias {
@@ -111,12 +117,14 @@ resource "aws_route53_record" "main" {
   # GovCloud:
   type    = "A"
   ttl     = 300
-  records = [for i in each.value.network_interface_ids : data.aws_network_interface.interface_ips["${each.key}_${i}"].private_ip]
+  records = [data.aws_network_interface.interface_ips["${each.key}"].private_ip]
+  multivalue_answer_routing_policy = true
+  set_identifier = data.aws_network_interface.interface_ips["${each.key}"].availability_zone
 }
 
 // Create an org-wide DNS hosted zone for cross-account resource sharing when needed
 resource "aws_route53_zone" "org" {
-  count = var.create-route53-zones ? 1 : 0
+  count = var.create-route53-zones && var.create-org-zone ? 1 : 0
   name  = "${var.org-shorthand-name}.aws.local"
   vpc {
     vpc_id = var.vpc-id

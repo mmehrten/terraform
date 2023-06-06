@@ -15,4 +15,9 @@ variable "create-route53-zones" {
   default     = true
   description = "Whether or not to create Route 53 zones for interface endpoint services."
 }
+variable "create-org-zone" {
+  type        = bool
+  default     = true
+  description = "Whether or not to create Route 53 zones for organization."
+}
 
