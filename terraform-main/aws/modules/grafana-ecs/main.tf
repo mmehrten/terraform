@@ -46,6 +46,17 @@ resource "aws_iam_policy" "ecs_task_custom_policy" {
       "Effect": "Allow",
       "Action": "tag:GetResources",
       "Resource": "*"
+    },
+    {
+      "Sid": "AllowExecuteCommand",
+      "Effect": "Allow",
+      "Action": [
+        "ssmmessages:CreateControlChannel",
+        "ssmmessages:CreateDataChannel",
+        "ssmmessages:OpenControlChannel",
+        "ssmmessages:OpenDataChannel"
+      ],
+      "Resource": "*"
     }
   ]
 }
@@ -124,7 +135,12 @@ resource "aws_ecs_task_definition" "grafana" {
       {
         "containerPort": 3000,
         "hostPort": 3000
+      },      
+      {
+        "containerPort": 22,
+        "hostPort": 22
       }
+
     ]
   }
 ]
@@ -165,4 +181,5 @@ resource "aws_ecs_service" "grafana" {
 
   }
   launch_type = "FARGATE"
+  enable_execute_command = true
 }
