@@ -82,6 +82,25 @@ resource "aws_lambda_permission" "allow_eventbridge" {
   source_arn    = aws_cloudwatch_event_rule.every5minutes[each.key].arn
 }
 
+resource "aws_cloudwatch_metric_alarm" "health-checks" {
+  for_each = local.subnets
+  alarm_name                = "s3-health-check-${each.value.az}"
+  comparison_operator       = "GreaterThanOrEqualToThreshold"
+  evaluation_periods        = 2
+  datapoints_to_alarm = 2
+  metric_name               = "Errors"
+  namespace                 = "AWS/Lambda"
+  period                    = 900
+  statistic                 = "Maximum"
+  threshold                 = 1
+  alarm_description         = "Errors in health check lambda"
+  insufficient_data_actions = []
+  dimensions = {
+    FunctionName = "s3-hc-${each.value.az}"
+  }
+  treat_missing_data ="breaching"
+}
+
 module "vpc-endpoints" {
   region             = var.region
   account-id         = var.account-id
@@ -100,4 +119,3 @@ module "vpc-endpoints" {
   create-org-zone = false
   source          = "../terraform-main/aws/modules/vpc-endpoints"
 }
-
