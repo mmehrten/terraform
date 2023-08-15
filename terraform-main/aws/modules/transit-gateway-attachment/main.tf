@@ -144,7 +144,7 @@ resource "aws_route" "root-peer" {
 locals {
   service-endpoints = {
     for k, v in var.endpoints :
-    o => "${coalesce(k, v)}.${var.region}.amazonaws.com"
+    k => "${coalesce(k, lookup(v, "dns"))}.${var.region}.amazonaws.com"
   }
 }
 data "aws_route53_zone" "main" {

@@ -3,25 +3,57 @@
 */
 
 resource "aws_iam_role_policy" "main" {
-  name   = "${var.app-shorthand-name}.iam.role.lambda"
+  name   = "${var.app-shorthand-name}.iam.role.lambda.${var.name}"
   role   = aws_iam_role.main.id
   policy = var.policy
 }
 
+resource "aws_iam_role_policy" "ec2" {
+  name   = "${var.app-shorthand-name}.iam.role.lambda.${var.name}.ec2"
+  role   = aws_iam_role.main.id
+  policy = jsonencode(
+{
+ "Version": "2012-10-17",
+ "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DescribeNetworkInterfaces",
+        "ec2:CreateNetworkInterface",
+        "ec2:DeleteNetworkInterface",
+        "ec2:DescribeInstances",
+        "ec2:AttachNetworkInterface"
+      ],
+      "Resource": "*"
+    },
+            {
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+                "cloudwatch:*"
+            ],
+            "Resource": "*"
+        }
+
+ ]
+})
+}
+
+
+
 resource "aws_iam_role" "main" {
-  name                = "${var.app-shorthand-name}.iam.role.lambda"
-  managed_policy_arns = ["arn:${var.partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"]
+  name                = "${var.app-shorthand-name}.iam.role.lambda.${var.name}"
+  managed_policy_arns = []
   assume_role_policy  = <<EOF
 {
  "Version": "2012-10-17",
  "Statement": [
    {
      "Action": "sts:AssumeRole",
-     "Principal": {
-       "Service": "lambda.amazonaws.com"
-     },
-     "Effect": "Allow",
-     "Sid": ""
+     "Principal": {"Service": "lambda.amazonaws.com"},
+     "Effect": "Allow"
    }
  ]
 }
@@ -50,5 +82,10 @@ resource "aws_lambda_function" "main" {
   }
 }
 
-
+output "lambda_arn" {
+  value = aws_lambda_function.main.arn
+}
+output "iam_arn" {
+  value = aws_iam_role.main.arn
+}
 

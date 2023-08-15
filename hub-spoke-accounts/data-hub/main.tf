@@ -13,6 +13,7 @@ module "terraform" {
   terraform-role     = var.terraform-role
   tags               = var.tags
   base-name          = local.base-name
+  partition          = var.partition
 
   runner-role-arns = ["arn:aws:iam::${var.account-id}:role/Admin"]
   source           = "../../terraform-main/aws/modules/terraform-infra"
@@ -26,6 +27,7 @@ module "vpc" {
   terraform-role     = var.terraform-role
   tags               = var.tags
   base-name          = local.base-name
+  partition          = var.partition
 
   public-subnets  = var.public-subnets
   private-subnets = var.private-subnets
@@ -41,6 +43,7 @@ module "s3-logs" {
   terraform-role     = var.terraform-role
   tags               = var.tags
   base-name          = local.base-name
+  partition          = var.partition
 
   bucket-name = "${local.base-name}.s3.logs"
   versioning  = false
@@ -55,6 +58,7 @@ module "organization-root" {
   terraform-role     = var.terraform-role
   tags               = var.tags
   base-name          = local.base-name
+  partition          = var.partition
 
   source      = "../../terraform-main/aws/modules/organization-root"
   logs-bucket = module.s3-logs.outputs.name
@@ -68,6 +72,7 @@ module "internet-gateway" {
   terraform-role     = var.terraform-role
   tags               = var.tags
   base-name          = local.base-name
+  partition          = var.partition
 
   vpc-id         = module.vpc.outputs.vpc-id
   subnet-ids     = module.vpc.outputs.public-subnet-ids
@@ -83,6 +88,7 @@ module "vpc-endpoints" {
   terraform-role     = var.terraform-role
   tags               = var.tags
   base-name          = local.base-name
+  partition          = var.partition
 
   vpc-id          = module.vpc.outputs.vpc-id
   subnet-ids      = module.vpc.outputs.private-subnet-ids
@@ -99,6 +105,7 @@ module "transit-gateway" {
   terraform-role     = var.terraform-role
   tags               = var.tags
   base-name          = local.base-name
+  partition          = var.partition
 
   vpc-id     = module.vpc.outputs.vpc-id
   subnet-ids = [for o in values(module.vpc.outputs.private-subnet-ids) : o]

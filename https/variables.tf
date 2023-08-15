@@ -14,3 +14,11 @@ variable "vpc-id" {
   type        = string
   description = "The VPC to deploy in"
 }
+variable "acm-cert-arn" {
+  type = string
+  description = "The ARN of the ACM certificate to use for SSL"
+}
+variable "acm-cert-pass" {
+  type = string
+  description = "The password for the ACM certificate private key to use for SSL"
+}

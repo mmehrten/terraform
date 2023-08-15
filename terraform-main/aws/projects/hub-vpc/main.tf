@@ -92,7 +92,7 @@ module "s3-data" {
   base-name          = local.base-name
   partition          = var.partition
 
-  bucket-name = "${local.base-name}.s3.analytics"
+  bucket-name = "${local.base-name}.s3.analytics.v2"
   versioning  = false
   source      = "../../modules/s3"
 }

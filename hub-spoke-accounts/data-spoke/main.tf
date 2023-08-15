@@ -22,14 +22,14 @@ module "account" {
   app-name           = var.app-name
   partition          = var.partition
   // Use organization root to provision child
-  terraform-role = local.terraform-role
-  tags           = local.tags
+  terraform-role = var.terraform-role
+  tags           = var.tags
   // Don't use region in account base name, since account can span regions
   base-name = var.app-shorthand-name
 
   account-name  = "${var.app-shorthand-name}.account"
   account-owner = var.owner-email
-  source        = "../../modules/organization-child"
+  source        = "../../terraform-main/aws/modules/organization-child"
 }
 
 provider "aws" {
@@ -41,19 +41,20 @@ provider "aws" {
 
 locals {
   child-account-id     = var.create-account == true ? module.account[0].outputs.account-id : var.root-account-id
-  child-terraform-role = var.create-account == true ? module.account[0].outputs.terraform-role-arn : local.terraform-role
+  child-terraform-role = var.create-account == true ? module.account[0].outputs.terraform-role-arn : var.terraform-role
 }
 
 module "child-terraform-role" {
   providers          = { aws = aws.spoke, aws.root = aws }
   region             = var.region
-  account-id         = var.account-id
+  account-id         = local.child-account-id
   app-shorthand-name = var.app-shorthand-name
   app-name           = var.app-name
   # Use the child account admin role to provision the Terraform role
   terraform-role = "arn:aws:iam::${local.child-account-id}:role/OrganizationAccountAccessRole"
   tags           = var.tags
   base-name      = local.base-name
+  partition      = var.partition
 
   # Allow the root account Terraform role to assume the child account Terraform role
   runner-role-arns = [
@@ -61,7 +62,7 @@ module "child-terraform-role" {
     "arn:aws:iam::${var.root-account-id}:role/Admin",
     "arn:aws:iam::${var.root-account-id}:role/Terraform",
   ]
-  source = "../../modules/terraform-role"
+  source = "../../terraform-main/aws/modules/terraform-role"
 }
 
 module "vpc" {
@@ -73,6 +74,7 @@ module "vpc" {
   terraform-role     = local.child-terraform-role
   tags               = var.tags
   base-name          = local.base-name
+  partition          = var.partition
 
   public-subnets  = var.public-subnets
   private-subnets = var.private-subnets
@@ -89,6 +91,7 @@ module "transit-gateway-attachment" {
   terraform-role     = local.child-terraform-role
   tags               = var.tags
   base-name          = local.base-name
+  partition          = var.partition
 
   transit-gateway-id = data.aws_ec2_transit_gateway.tgw.id
   root-account-id    = var.root-account-id
@@ -108,6 +111,7 @@ module "s3-infra" {
   terraform-role     = local.child-terraform-role
   tags               = var.tags
   base-name          = local.base-name
+  partition          = var.partition
 
   bucket-name = "${local.base-name}.s3.infra"
   versioning  = false
@@ -123,6 +127,7 @@ module "s3-data" {
   terraform-role     = local.child-terraform-role
   tags               = var.tags
   base-name          = local.base-name
+  partition          = var.partition
 
   bucket-name = "${local.base-name}.s3.analytics"
   versioning  = false
@@ -138,6 +143,7 @@ module "s3-logs" {
   terraform-role     = local.child-terraform-role
   tags               = var.tags
   base-name          = local.base-name
+  partition          = var.partition
 
   bucket-name     = "${local.base-name}.s3.logs"
   versioning      = false

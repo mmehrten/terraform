@@ -1,14 +1,62 @@
 /*
-* Create a Grafana instance running on ECS.
+*   Create hub VPC with VPC endpoints and an internet gateway, to be used as a transit hub for other VPCs.
 */
-resource "aws_security_group" "grafana" {
-  name        = "${var.base-name}.sg.grafana"
-  description = "Grafana"
+locals {
+  base-name = "${var.app-shorthand-name}.${var.region}"
+}
+
+module "cluster" {
+  region             = var.region
+  account-id         = var.account-id
+  app-shorthand-name = var.app-shorthand-name
+  app-name           = var.app-name
+  terraform-role     = var.terraform-role
+  tags               = var.tags
+  base-name          = local.base-name
+  partition          = var.partition
+
+  source = "../terraform-main/aws/modules/ecs-cluster"
+}
+
+data "aws_subnet_ids" "public" {
+  vpc_id = var.vpc-id
+  filter {
+    name   = "tag:Name"
+    values = ["*public*"]
+  }
+}
+
+resource "aws_service_discovery_private_dns_namespace" "main" {
+  name        = "${local.base-name}.local"
+  description = "${local.base-name} service discovery"
+  vpc         = var.vpc-id
+}
+
+/*
+* Create a https instance running on ECS.
+*/
+resource "aws_security_group" "https" {
+  name        = "${local.base-name}.sg.https"
+  description = "https"
   vpc_id      = var.vpc-id
 
   ingress {
-    from_port        = 3000
-    to_port          = 3000
+    from_port        = 443
+    to_port          = 443
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+  ingress {
+    from_port        = 80
+    to_port          = 80
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+  ingress {
+    from_port        = 5000
+    to_port          = 5000
     protocol         = "tcp"
     cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
@@ -20,21 +68,11 @@ resource "aws_security_group" "grafana" {
     cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
   }
-  ingress {
-    from_port = 0
-    to_port   = 0
-    protocol  = "-1"
-    self      = true
-  }
-
-  tags = {
-    Name = "grafana"
-  }
 }
 
 
 resource "aws_iam_policy" "ecs_task_custom_policy" {
-  name = "${var.app-shorthand-name}.ecs.grafana.ecs-task-custom-policy"
+  name = "${var.app-shorthand-name}.ecs.https.ecs-task-custom-policy"
   path = "/"
 
   policy = <<EOF
@@ -63,6 +101,12 @@ resource "aws_iam_policy" "ecs_task_custom_policy" {
         "ssmmessages:OpenDataChannel"
       ],
       "Resource": "*"
+    },
+    {
+      "Sid": "AllowACMCertExport",
+      "Effect": "Allow",
+      "Action": "acm:ExportCertificate",
+      "Resource": "${var.acm-cert-arn}"
     }
   ]
 }
@@ -82,11 +126,11 @@ data "aws_iam_policy_document" "ecs_task" {
 }
 # Create the IAM roles for the ECS Task
 resource "aws_iam_role" "ecs_task_execution_role" {
-  name               = "${var.app-shorthand-name}.ecs.grafana.task-execution-role"
+  name               = "${var.app-shorthand-name}.ecs.https.task-execution-role"
   assume_role_policy = data.aws_iam_policy_document.ecs_task.json
 }
 resource "aws_iam_role" "ecs_task_role" {
-  name               = "${var.app-shorthand-name}.ecs.grafana.task-role"
+  name               = "${var.app-shorthand-name}.ecs.https.task-role"
   assume_role_policy = data.aws_iam_policy_document.ecs_task.json
 }
 resource "aws_iam_role_policy_attachment" "task_custom" {
@@ -122,8 +166,13 @@ resource "aws_iam_role_policy_attachment" "task_execution_ssm_ro" {
   policy_arn = "arn:${var.partition}:iam::aws:policy/AmazonSSMReadOnlyAccess"
 }
 
-resource "aws_ecs_task_definition" "grafana" {
-  family                   = "grafana"
+resource "aws_cloudwatch_log_group" "main" {
+  name              = "/ecs/https/"
+  retention_in_days = 5
+}
+
+resource "aws_ecs_task_definition" "https" {
+  family                   = "https"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = "256"
@@ -134,19 +183,55 @@ resource "aws_ecs_task_definition" "grafana" {
   container_definitions = <<DEFINITION
 [
   {
-    "name": "grafana",
-    "image": "grafana/grafana:latest",
+    "name": "https",
+    "image": "053633994311.dkr.ecr.us-gov-west-1.amazonaws.com/https-demo:latest",
     "essential": true,
-    "portMappings": [
-      {
-        "containerPort": 3000,
-        "hostPort": 3000
-      },      
-      {
-        "containerPort": 22,
-        "hostPort": 22
+    "entryPoint": [
+      "sh", 
+      "run.sh",     
+      "--bind", 
+      ":443",
+      "-w", 
+      "4",
+      "--ca-certs", 
+      "CertificateChain",
+      "--keyfile", 
+      "PrivateKey",
+      "--certfile", 
+      "Certificate",
+      "--access-logfile", 
+      "-",
+      "--log-level", 
+      "DEBUG",
+      "--ssl-version", 
+      "TLS_SERVER",
+      "-c", 
+      "gunicorn_hooks_config.py",
+      "app:app"
+    ],
+    "logConfiguration": { 
+      "logDriver": "awslogs",
+      "options": { 
+          "awslogs-group" : "${aws_cloudwatch_log_group.main.name}",
+          "awslogs-region": "${var.region}",
+          "awslogs-stream-prefix": "ecs"
       }
-
+    },
+    "environment": [
+      {"name": "AWS_ACM_CERT_ARN", "value": "${var.acm-cert-arn}"},
+      {"name": "AWS_ACM_CERT_PASS", "value": "${var.acm-cert-pass}"}
+    ],
+    "portMappings": [ 
+        { 
+            "containerPort": 80,
+            "hostPort": 80,
+            "protocol": "tcp"
+        },
+        { 
+            "containerPort": 443,
+            "hostPort": 443,
+            "protocol": "tcp"
+        }
     ]
   }
 ]
@@ -154,10 +239,10 @@ DEFINITION
 }
 
 resource "aws_service_discovery_service" "main" {
-  name = "grafana"
+  name = "https"
 
   dns_config {
-    namespace_id = var.service-discovery-namespace-id
+    namespace_id = aws_service_discovery_private_dns_namespace.main.id
 
     dns_records {
       ttl  = 10
@@ -172,14 +257,14 @@ resource "aws_service_discovery_service" "main" {
   }
 }
 
-resource "aws_ecs_service" "grafana" {
-  name            = replace("${var.base-name}.ecs.service.grafana", ".", "_")
-  cluster         = var.cluster-id
-  task_definition = aws_ecs_task_definition.grafana.arn
+resource "aws_ecs_service" "https" {
+  name            = replace("${local.base-name}.ecs.service.https", ".", "_")
+  cluster         = module.cluster.id
+  task_definition = aws_ecs_task_definition.https.arn
   desired_count   = 2
   network_configuration {
-    subnets          = var.subnet-ids
-    security_groups  = [aws_security_group.grafana.id]
+    subnets          = data.aws_subnet_ids.public.ids
+    security_groups  = [aws_security_group.https.id]
     assign_public_ip = true
   }
   service_registries {

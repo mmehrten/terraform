@@ -35,3 +35,7 @@ variable "root-transit-gateway-id" {
   type        = string
   description = "Transit gateway ID for the root AWS account networking VPC"
 }
+variable "create-account" {
+  type    = bool
+  default = true
+}
