@@ -1,0 +1,1 @@
+An example Flask/Gunicorn app running in ECS with HTTPS provided by ACM certificates.
