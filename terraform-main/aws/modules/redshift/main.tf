@@ -42,7 +42,7 @@ data "aws_subnets" "main" {
 }
 
 resource "aws_redshift_subnet_group" "main" {
-  name       = "redshift-subnet-group"
+  name       = replace("${var.base-name}.redshift.subnet-group", ".", "-")
   subnet_ids = data.aws_subnets.main.ids
 }
 
@@ -94,13 +94,6 @@ resource "aws_iam_role_policy" "main" {
         {
             "Effect": "Allow",
             "Action": [
-                "kinesis:*"
-            ],
-            "Resource": "*"
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
                 "lambda:InvokeFunction"
             ],
             "Resource": "*"
@@ -131,6 +124,52 @@ resource "aws_iam_role_policy" "main" {
 EOF
 }
 
+resource "aws_iam_role_policy" "msk" {
+  name   = "${var.app-shorthand-name}.iam.role.redshift-msk"
+  role   = aws_iam_role.main.id
+  policy = <<EOF
+{
+   "Version": "2012-10-17",
+   "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "kafka-cluster:Connect",
+                "kafka-cluster:AlterCluster",
+                "kafka-cluster:DescribeCluster",
+                "kafka:GetBootstrapBrokers"
+            ],
+            "Resource": [
+                "arn:${var.partition}:kafka:${var.region}:${var.account-id}:cluster/*/*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "kafka-cluster:*Topic*",
+                "kafka-cluster:WriteData",
+                "kafka-cluster:ReadData"
+            ],
+            "Resource": [
+                "arn:${var.partition}:kafka:${var.region}:${var.account-id}:topic/*/*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "kafka-cluster:AlterGroup",
+                "kafka-cluster:DescribeGroup"
+            ],
+            "Resource": [
+                "arn:${var.partition}:kafka:${var.region}:${var.account-id}:group/*/*"
+            ]
+        }
+   ]
+}
+EOF
+}
+
+
 resource "aws_kms_key" "main" {
   description             = "Redshift KMS key."
   deletion_window_in_days = 30
@@ -146,7 +185,7 @@ resource "aws_kms_alias" "alias" {
 }
 
 resource "aws_redshift_cluster" "main" {
-  cluster_identifier = "redshift-cluster"
+  cluster_identifier = replace("${var.base-name}.redshift.cluster", ".", "-")
   database_name      = var.database-name
   master_username    = "admin"
   master_password    = var.master-password
@@ -168,102 +207,12 @@ resource "aws_redshift_cluster" "main" {
   }
 }
 
-
-/*
---drop schema spectrum
-create external schema spectrum 
-from data catalog 
-database 'dev' 
-iam_role 'arn:aws-us-gov:iam::053633994311:role/core-zwy2.us-gov-west-1.iam.role.redshift'
-create external database if not exists;
-
---drop table spectrum.ev
-create external table spectrum.ev(
-  station_name VARCHAR,
-  address_1 VARCHAR,
-  address_2 VARCHAR,
-  city VARCHAR,
-  state VARCHAR,
-  postal_code VARCHAR,
-  num_ports integer,
-  pricing_policy VARCHAR,
-  usage_access VARCHAR,
-  category VARCHAR,
-  subcategory VARCHAR,
-  port_1_type VARCHAR,
-  voltage VARCHAR,
-  port_2_type VARCHAR,
-  georeference VARCHAR,
-  pricing VARCHAR,
-  power_select VARCHAR
-)
-row format delimited
-fields terminated by ','
-stored as textfile
-location 's3://core-zwy2.us-gov-west-1.s3.analytics/bronze/ev/'
---table properties ('numRows'='172000');
-
-
---drop table spectrum.ev
-create table public.ev(
-  station_name VARCHAR,
-  address_1 VARCHAR,
-  address_2 VARCHAR,
-  city VARCHAR,
-  state VARCHAR,
-  postal_code VARCHAR,
-  num_ports integer,
-  pricing_policy VARCHAR,
-  usage_access VARCHAR,
-  category VARCHAR,
-  subcategory VARCHAR,
-  port_1_type VARCHAR,
-  voltage VARCHAR,
-  port_2_type VARCHAR,
-  georeference VARCHAR,
-  pricing VARCHAR,
-  power_select VARCHAR
-)
-
---drop schema spectrum
-COPY public.ev FROM 's3://core-zwy2.us-gov-west-1.s3.analytics/bronze/ev/'
-iam_role 'arn:aws-us-gov:iam::053633994311:role/core-zwy2.us-gov-west-1.iam.role.redshift'
-delimiter ',';
-
-CREATE EXTERNAL SCHEMA kds
-FROM KINESIS
-IAM_ROLE 'arn:aws-us-gov:iam::053633994311:role/core-zwy2.us-gov-west-1.iam.role.redshift' ;
-
-
-CREATE MATERIALIZED VIEW my_topic_materialized_view DISTKEY(6) sortkey(1) AUTO REFRESH NO AS
-SELECT * FROM kds.demo_stream
-
-REFRESH MATERIALIZED VIEW my_topic_materialized_view;
-
-SELECT COUNT(*) FROM my_topic_materialized_view
-
-
-
-create table name (rdata SUPER) diststyle AUTO
-
-COPY name FROM 's3://core-zwy2.us-gov-west-1.s3.analytics'
-iam_role 'arn:aws-us-gov:iam::053633994311:role/core-zwy2.us-gov-west-1.iam.role.redshift'
-FORMAT JSON 'noshred';
-
-insert into name (SELECT * FROM name 
-                  UNION ALL select * FROm name 
-                  UNION ALL select * FROm name 
-                  UNION ALL select * FROm name 
-                  UNION ALL select * FROm name 
-                  UNION ALL select * FROm name 
-                  UNION ALL select * FROm name 
-                  UNION ALL select * FROm name 
-                  UNION ALL select * FROm name 
-                  UNION ALL select * FROm name 
-                  UNION ALL select * FROm name 
-                  UNION ALL select * FROm name 
-                  UNION ALL select * FROm name 
-                  UNION ALL select * FROm name 
-                  UNION ALL select * FROm name 
-                  UNION ALL select * FROm name )
-*/
+output cluster_identifier {
+  value = aws_redshift_cluster.main.cluster_identifier
+}
+output master_username {
+  value = aws_redshift_cluster.main.master_username
+}
+output iam_role_arn {
+  value = aws_iam_role.main.arn
+}
