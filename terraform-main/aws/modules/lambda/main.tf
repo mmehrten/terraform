@@ -22,7 +22,10 @@ resource "aws_iam_role_policy" "ec2" {
         "ec2:CreateNetworkInterface",
         "ec2:DeleteNetworkInterface",
         "ec2:DescribeInstances",
-        "ec2:AttachNetworkInterface"
+        "ec2:AttachNetworkInterface",
+        "ec2:DescribeSecurityGroups",
+        "ec2:DescribeSubnets",
+        "ec2:DescribeVpcs"
       ],
       "Resource": "*"
     },
@@ -63,25 +66,45 @@ EOF
 data "archive_file" "main" {
   type        = "zip"
   source_file = var.file-path
-  output_path = "lambda.zip"
+  output_path = "${var.name}.zip"
+}
+
+resource "aws_security_group" "main" {
+  count = var.subnet-ids != null ? 1 : 0
+  name        = "${var.base-name}.sg.lambda.${var.name}"
+  description = "Security group for Lambda."
+  vpc_id      = var.vpc-id
+  egress {
+    description      = "Allow all outbound connections"
+    from_port        = 0
+    to_port          = 65535
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = []
+  }
 }
 
 resource "aws_lambda_function" "main" {
-  filename         = "lambda.zip"
+  filename         = "${var.name}.zip"
   function_name    = var.name
   role             = aws_iam_role.main.arn
   handler          = var.handler
   source_code_hash = data.archive_file.main.output_base64sha256
   runtime          = var.runtime
+  timeout = var.timeout
   environment {
     variables = var.environment
   }
   vpc_config {
     subnet_ids         = var.subnet-ids
-    security_group_ids = var.security-group-ids
+    security_group_ids = concat(var.security-group-ids, [for o in aws_security_group.main: o.id])
   }
+  layers = var.layer_arns
 }
 
+output "lambda_name" {
+  value= aws_lambda_function.main.function_name
+}
 output "lambda_arn" {
   value = aws_lambda_function.main.arn
 }

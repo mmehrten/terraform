@@ -2,9 +2,9 @@ variable "vpc-id" {
   type        = string
   description = "The VPC to create the gateway in."
 }
-variable "subnet-ids" {
-  type        = map(string)
-  description = "The subnet IDs to associate the gateway to."
+variable "subnet-id" {
+  type        = string
+  description = "The subnet ID to associate the gateway to."
 }
 variable "route-table-id" {
   type        = string
