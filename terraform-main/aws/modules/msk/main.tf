@@ -60,8 +60,8 @@ resource "aws_cloudwatch_log_group" "main" {
 }
 
 resource "aws_msk_configuration" "main" {
-  kafka_versions = ["3.5.1"]
-  name = replace("${var.base-name}.msk.config", ".", "-")
+  kafka_versions    = ["3.5.1"]
+  name              = replace("${var.base-name}.msk.config", ".", "-")
   server_properties = <<EOF
 auto.create.topics.enable=true
 default.replication.factor=3
@@ -84,11 +84,11 @@ resource "aws_msk_cluster" "main" {
   number_of_broker_nodes = 3
 
   configuration_info {
-    arn = aws_msk_configuration.main.arn
+    arn      = aws_msk_configuration.main.arn
     revision = aws_msk_configuration.main.latest_revision
   }
   broker_node_group_info {
-    instance_type = "kafka.t3.small"
+    instance_type  = "kafka.t3.small"
     client_subnets = data.aws_subnets.main.ids
     storage_info {
       ebs_storage_info {
@@ -105,7 +105,7 @@ resource "aws_msk_cluster" "main" {
 
   client_authentication {
     sasl {
-      iam = true
+      iam   = true
       scram = true
     }
     # tls {
@@ -117,7 +117,7 @@ resource "aws_msk_cluster" "main" {
   encryption_info {
     encryption_at_rest_kms_key_arn = aws_kms_key.main.arn
     encryption_in_transit {
-      in_cluster = true
+      in_cluster    = true
       client_broker = "TLS_PLAINTEXT"
     }
   }
@@ -153,7 +153,7 @@ resource "aws_msk_cluster" "main" {
 
 }
 
-output cluster_arn {
+output "cluster_arn" {
   value = aws_msk_cluster.main.arn
 }
 

@@ -207,12 +207,12 @@ resource "aws_redshift_cluster" "main" {
   }
 }
 
-output cluster_identifier {
+output "cluster_identifier" {
   value = aws_redshift_cluster.main.cluster_identifier
 }
-output master_username {
+output "master_username" {
   value = aws_redshift_cluster.main.master_username
 }
-output iam_role_arn {
+output "iam_role_arn" {
   value = aws_iam_role.main.arn
 }

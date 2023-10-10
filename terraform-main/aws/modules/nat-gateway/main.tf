@@ -3,7 +3,7 @@
 */
 
 resource "aws_eip" "main" {
-  domain="vpc"
+  domain = "vpc"
 }
 resource "aws_nat_gateway" "main" {
   allocation_id = aws_eip.main.id
@@ -18,7 +18,7 @@ resource "aws_nat_gateway" "main" {
 resource "aws_route" "main" {
   route_table_id         = var.route-table-id
   destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id             = aws_nat_gateway.main.id
+  nat_gateway_id         = aws_nat_gateway.main.id
 
   timeouts {
     create = "5m"

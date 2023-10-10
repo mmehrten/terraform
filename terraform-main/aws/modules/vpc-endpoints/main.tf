@@ -100,12 +100,12 @@ resource "aws_route53_zone" "main" {
 resource "aws_route53_record" "main" {
   for_each = {
     for o in flatten([
-      for k, v in local.route_53_aliases: [
-        for id in v.network_interface_ids: {"key": k, "id": id, "value": v}
+      for k, v in local.route_53_aliases : [
+        for id in v.network_interface_ids : { "key" : k, "id" : id, "value" : v }
       ]
-    ]): "${o.key}_${o.id}" => o}
-  zone_id  = aws_route53_zone.main[each.value.key].zone_id
-  name     = each.value.value.dns_apex
+  ]) : "${o.key}_${o.id}" => o }
+  zone_id = aws_route53_zone.main[each.value.key].zone_id
+  name    = each.value.value.dns_apex
   # Commercial:
   # type     = "A"
   # alias {
@@ -115,11 +115,11 @@ resource "aws_route53_record" "main" {
   # }
 
   # GovCloud:
-  type    = "A"
-  ttl     = 300
-  records = [data.aws_network_interface.interface_ips["${each.key}"].private_ip]
+  type                             = "A"
+  ttl                              = 300
+  records                          = [data.aws_network_interface.interface_ips["${each.key}"].private_ip]
   multivalue_answer_routing_policy = true
-  set_identifier = data.aws_network_interface.interface_ips["${each.key}"].availability_zone
+  set_identifier                   = data.aws_network_interface.interface_ips["${each.key}"].availability_zone
 }
 
 // Create an org-wide DNS hosted zone for cross-account resource sharing when needed

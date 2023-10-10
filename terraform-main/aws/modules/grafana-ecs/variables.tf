@@ -8,7 +8,7 @@ variable "subnet-ids" {
 }
 variable "cluster-id" {
   description = "The ECS cluster ID."
-  type = string  
+  type        = string
 }
 variable "service-discovery-namespace-id" {
   description = "The service discovery namespace to register to"
