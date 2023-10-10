@@ -26,3 +26,7 @@ variable "private-subnets" {
   type        = map(string)
   description = "A mapping of Availability Zone to the CIDR block for the subnet in that AZ."
 }
+variable "use-nat-gateway" {
+  type    = bool
+  default = true
+}
