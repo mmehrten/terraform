@@ -10,15 +10,11 @@ variable "app-name" {
   type        = string
   description = "The longhand name of the app being provisioned."
 }
+variable "opensearch-master-password" {
+  type        = string
+  description = ""
+}
 variable "vpc-id" {
-  type        = string
-  description = "The VPC to deploy in"
-}
-variable "acm-cert-arn" {
-  type        = string
-  description = "The ARN of the ACM certificate to use for SSL"
-}
-variable "acm-cert-pass" {
-  type        = string
-  description = "The password for the ACM certificate private key to use for SSL"
+  type    = string
+  default = true
 }

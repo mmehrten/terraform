@@ -370,6 +370,7 @@ resource "aws_lambda_permission" "allow_eventbridge" {
 
 
 resource "aws_redshiftdata_statement" "create-udf" {
+  count              = var.use-nat-gateway ? 1 : 0
   cluster_identifier = module.redshift.cluster_identifier
   database           = "dev"
   db_user            = module.redshift.master_username
@@ -386,6 +387,7 @@ resource "aws_redshiftdata_statement" "create-udf" {
 }
 
 resource "aws_redshiftdata_statement" "create-external" {
+  count              = var.use-nat-gateway ? 1 : 0
   cluster_identifier = module.redshift.cluster_identifier
   database           = "dev"
   db_user            = module.redshift.master_username
@@ -402,6 +404,7 @@ EOF
 }
 
 resource "aws_redshiftdata_statement" "create-mv-main" {
+  count              = var.use-nat-gateway ? 1 : 0
   depends_on         = [aws_redshiftdata_statement.create-external]
   cluster_identifier = module.redshift.cluster_identifier
   database           = "dev"
@@ -426,6 +429,7 @@ resource "aws_redshiftdata_statement" "create-mv-main" {
 }
 
 resource "aws_redshiftdata_statement" "create-mv-nested" {
+  count              = var.use-nat-gateway ? 1 : 0
   depends_on         = [aws_redshiftdata_statement.create-external]
   cluster_identifier = module.redshift.cluster_identifier
   database           = "dev"
