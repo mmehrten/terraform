@@ -12,7 +12,7 @@ variable "name" {
 variable "timeout" {
   description = "The timeout in seconds."
   type        = number
-  default = 30
+  default     = 30
 }
 
 variable "file-path" {
@@ -46,12 +46,12 @@ variable "security-group-ids" {
   default     = []
 }
 variable "layer_arns" {
-  default = []
-  type = list(string)
+  default     = []
+  type        = list(string)
   description = "ARNs of Lambda layers to use"
 }
 variable "vpc-id" {
   description = "VPC ID for Lambda to run in."
   type        = string
-  default = null
+  default     = null
 }

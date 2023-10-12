@@ -19,8 +19,8 @@ resource "aws_kms_alias" "alias" {
 resource "aws_kinesis_stream" "main" {
   name             = var.name
   retention_period = var.retention-period
-  encryption_type = "KMS"
-  kms_key_id = aws_kms_key.encrypt-main.arn
+  encryption_type  = "KMS"
+  kms_key_id       = aws_kms_key.encrypt-main.arn
 
   shard_level_metrics = [
     "IncomingBytes",

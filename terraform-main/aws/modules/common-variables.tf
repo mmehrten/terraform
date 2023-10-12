@@ -91,7 +91,7 @@ variable "endpoints" {
     },
     "sagemaker.api"     = null,
     "sagemaker.runtime" = null,
-    "sns" = null,
+    "sns"               = null,
   }
 }
 
