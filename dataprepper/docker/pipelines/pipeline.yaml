@@ -62,5 +62,9 @@ ss4o-cloudtrail-pipeline:
           # - from_key: "parsed/cloud/resource_id"
           #   to_key: "cloud/resource_id"
   sink:
-    - stdout:
-
+    - opensearch:
+        hosts: ["https://vpc-os-zwy2-us-gov-west-1-demo-mnfhpkqgmzrlgwkqh2kulkfnqy.us-gov-west-1.es.amazonaws.com"]
+        aws_sigv4: true
+        index_type: custom
+        index: ss4o_logs-aws_cloudtrail-production
+        aws_region: "us-gov-west-1"
