@@ -66,5 +66,5 @@ ss4o-cloudtrail-pipeline:
         hosts: ["https://vpc-os-zwy2-us-gov-west-1-demo-mnfhpkqgmzrlgwkqh2kulkfnqy.us-gov-west-1.es.amazonaws.com"]
         aws_sigv4: true
         index_type: custom
-        index: ss4o_logs-aws_cloudtrail-production
+        index: ss4o_logs-aws_cloudtrail-production-%{yyyy.MM.dd}
         aws_region: "us-gov-west-1"
