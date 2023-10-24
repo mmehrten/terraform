@@ -27,11 +27,13 @@ No resources.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_account-id"></a> [account-id](#input\_account-id) | n/a | `any` | n/a | yes |
-| <a name="input_app-name"></a> [app-name](#input\_app-name) | n/a | `any` | n/a | yes |
-| <a name="input_app-shorthand-name"></a> [app-shorthand-name](#input\_app-shorthand-name) | n/a | `any` | n/a | yes |
-| <a name="input_partition"></a> [partition](#input\_partition) | n/a | `string` | `"aws"` | no |
-| <a name="input_region"></a> [region](#input\_region) | n/a | `string` | `"us-east-1"` | no |
+| <a name="input_account-id"></a> [account-id](#input\_account-id) | The account to create resources in. | `string` | n/a | yes |
+| <a name="input_app-name"></a> [app-name](#input\_app-name) | The longhand name of the app being provisioned. | `string` | n/a | yes |
+| <a name="input_app-shorthand-name"></a> [app-shorthand-name](#input\_app-shorthand-name) | The shorthand name of the app being provisioned. | `string` | n/a | yes |
+| <a name="input_partition"></a> [partition](#input\_partition) | The partition to create resources in. | `string` | `"aws"` | no |
+| <a name="input_region"></a> [region](#input\_region) | The region to create resources in. | `string` | `"us-east-1"` | no |
+| <a name="input_tags"></a> [tags](#input\_tags) | Tags to apply to all resources. | `map(string)` | n/a | yes |
+| <a name="input_terraform-role"></a> [terraform-role](#input\_terraform-role) | The IAM role ARN to execute terraform with. | `string` | n/a | yes |
 
 ## Outputs
 

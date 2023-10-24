@@ -1,5 +1,5 @@
 /*
-*   Create hub VPC with VPC endpoints and an internet gateway
+*   Create a core VPC for an account with public/private subnets, internet gateway, and NAT gateway.
 */
 locals {
   base-name = "${var.app-shorthand-name}.${var.region}"

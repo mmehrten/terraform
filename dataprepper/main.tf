@@ -1,5 +1,5 @@
 /*
-*   Create hub VPC with VPC endpoints and an internet gateway, to be used as a transit hub for other VPCs.
+*   Create a DataPrepper ECS task with a Lambda to route Kinesis logs to DataPrepper.
 */
 locals {
   base-name = "${var.app-shorthand-name}.${var.region}"

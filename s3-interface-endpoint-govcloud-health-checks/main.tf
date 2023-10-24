@@ -1,5 +1,5 @@
 /*
-*   Create hub VPC with VPC endpoints and an internet gateway, to be used as a transit hub for other VPCs.
+*   Create lambda functions to run health checks on S3 interface endpoints.
 */
 locals {
   base-name = "${var.app-shorthand-name}.${var.region}"

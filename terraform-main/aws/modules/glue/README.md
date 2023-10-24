@@ -4,13 +4,13 @@ Create a Glue catalog and database.
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | = 4.44.0 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 4.44.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | = 4.44.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 4.44.0 |
 
 ## Modules
 
@@ -20,37 +20,37 @@ No modules.
 
 | Name | Type |
 |------|------|
-| [aws_glue_catalog_database.source-db](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/glue_catalog_database) | resource |
-| [aws_glue_connection.main](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/glue_connection) | resource |
-| [aws_glue_connection.redshift-serverless](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/glue_connection) | resource |
-| [aws_glue_crawler.main](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/glue_crawler) | resource |
-| [aws_glue_crawler.redshift](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/glue_crawler) | resource |
-| [aws_glue_resource_policy.main](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/glue_resource_policy) | resource |
-| [aws_iam_role.client](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/iam_role) | resource |
-| [aws_iam_role.client-super](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/iam_role) | resource |
-| [aws_iam_role.consumer](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/iam_role) | resource |
-| [aws_iam_role.etl](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/iam_role) | resource |
-| [aws_iam_role.runtime](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/iam_role) | resource |
-| [aws_lakeformation_data_lake_settings.main](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/lakeformation_data_lake_settings) | resource |
-| [aws_lakeformation_lf_tag.main](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/lakeformation_lf_tag) | resource |
-| [aws_lakeformation_permissions.admin-tag-share](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/lakeformation_permissions) | resource |
-| [aws_lakeformation_permissions.client](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/lakeformation_permissions) | resource |
-| [aws_lakeformation_permissions.client-data-source](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/lakeformation_permissions) | resource |
-| [aws_lakeformation_permissions.client-tag-share](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/lakeformation_permissions) | resource |
-| [aws_lakeformation_permissions.consumer-db](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/lakeformation_permissions) | resource |
-| [aws_lakeformation_permissions.consumer-tables](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/lakeformation_permissions) | resource |
-| [aws_lakeformation_permissions.etl-data-source](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/lakeformation_permissions) | resource |
-| [aws_lakeformation_permissions.etl-dev](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/lakeformation_permissions) | resource |
-| [aws_lakeformation_permissions.etl-tag-share](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/lakeformation_permissions) | resource |
-| [aws_lakeformation_permissions.tag-table-shares](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/lakeformation_permissions) | resource |
-| [aws_lakeformation_permissions.tag-tag-shares](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/lakeformation_permissions) | resource |
-| [aws_lakeformation_resource.buckets](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/lakeformation_resource) | resource |
-| [aws_lakeformation_resource_lf_tags.source-db](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/lakeformation_resource_lf_tags) | resource |
-| [aws_security_group.main](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/security_group) | resource |
-| [aws_security_group_rule.egress](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/security_group_rule) | resource |
-| [aws_security_group_rule.ingress](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/resources/security_group_rule) | resource |
-| [aws_subnet.main](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/data-sources/subnet) | data source |
-| [aws_subnets.main](https://registry.terraform.io/providers/hashicorp/aws/4.44.0/docs/data-sources/subnets) | data source |
+| [aws_glue_catalog_database.source-db](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/glue_catalog_database) | resource |
+| [aws_glue_connection.main](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/glue_connection) | resource |
+| [aws_glue_connection.redshift-serverless](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/glue_connection) | resource |
+| [aws_glue_crawler.main](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/glue_crawler) | resource |
+| [aws_glue_crawler.redshift](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/glue_crawler) | resource |
+| [aws_glue_resource_policy.main](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/glue_resource_policy) | resource |
+| [aws_iam_role.client](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
+| [aws_iam_role.client-super](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
+| [aws_iam_role.consumer](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
+| [aws_iam_role.etl](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
+| [aws_iam_role.runtime](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
+| [aws_lakeformation_data_lake_settings.main](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lakeformation_data_lake_settings) | resource |
+| [aws_lakeformation_lf_tag.main](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lakeformation_lf_tag) | resource |
+| [aws_lakeformation_permissions.admin-tag-share](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lakeformation_permissions) | resource |
+| [aws_lakeformation_permissions.client](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lakeformation_permissions) | resource |
+| [aws_lakeformation_permissions.client-data-source](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lakeformation_permissions) | resource |
+| [aws_lakeformation_permissions.client-tag-share](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lakeformation_permissions) | resource |
+| [aws_lakeformation_permissions.consumer-db](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lakeformation_permissions) | resource |
+| [aws_lakeformation_permissions.consumer-tables](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lakeformation_permissions) | resource |
+| [aws_lakeformation_permissions.etl-data-source](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lakeformation_permissions) | resource |
+| [aws_lakeformation_permissions.etl-dev](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lakeformation_permissions) | resource |
+| [aws_lakeformation_permissions.etl-tag-share](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lakeformation_permissions) | resource |
+| [aws_lakeformation_permissions.tag-table-shares](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lakeformation_permissions) | resource |
+| [aws_lakeformation_permissions.tag-tag-shares](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lakeformation_permissions) | resource |
+| [aws_lakeformation_resource.buckets](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lakeformation_resource) | resource |
+| [aws_lakeformation_resource_lf_tags.source-db](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lakeformation_resource_lf_tags) | resource |
+| [aws_security_group.main](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group) | resource |
+| [aws_security_group_rule.egress](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group_rule) | resource |
+| [aws_security_group_rule.ingress](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group_rule) | resource |
+| [aws_subnet.main](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/subnet) | data source |
+| [aws_subnets.main](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/subnets) | data source |
 
 ## Inputs
 
@@ -59,14 +59,15 @@ No modules.
 | <a name="input_account-id"></a> [account-id](#input\_account-id) | The account to create resources in. | `string` | n/a | yes |
 | <a name="input_app-name"></a> [app-name](#input\_app-name) | The longhand name of the app being provisioned. | `string` | n/a | yes |
 | <a name="input_app-shorthand-name"></a> [app-shorthand-name](#input\_app-shorthand-name) | The shorthand name of the app being provisioned. | `string` | n/a | yes |
-| <a name="input_base-name"></a> [base-name](#input\_base-name) | The base name to create new resources with (e.g. {app\_shorthand}.{region}). | `string` | n/a | yes |
+| <a name="input_base-name"></a> [base-name](#input\_base-name) | The base name to create new resources with (e.g. {app\_shorthand}.%s). | `string` | n/a | yes |
 | <a name="input_catalog-account-id"></a> [catalog-account-id](#input\_catalog-account-id) | The ID of the transit gateway to attach to. | `string` | n/a | yes |
 | <a name="input_crawlers"></a> [crawlers](#input\_crawlers) | A map of key-value pairs for the crawlers to create. | `map(any)` | n/a | yes |
 | <a name="input_databases"></a> [databases](#input\_databases) | A map of key-value pairs for the databases to create and LF tags to apply. | `map(any)` | n/a | yes |
+| <a name="input_endpoints"></a> [endpoints](#input\_endpoints) | A list of the services to create interface endpoints for. | `map(any)` | <pre>{<br>  "ec2messages": null,<br>  "ecr.api": {<br>    "dns": "api.ecr",<br>    "service": "com.amazonaws.%s.ecr.api"<br>  },<br>  "ecr.dkr": {<br>    "dns": "dkr.ecr",<br>    "service": "com.amazonaws.%s.ecr.dkr"<br>  },<br>  "ecs": null,<br>  "elasticmapreduce": null,<br>  "execute-api": null,<br>  "glue": null,<br>  "kinesis-firehose": {<br>    "dns": "firehose",<br>    "service": "com.amazonaws.%s.kinesis-firehose"<br>  },<br>  "kinesis-streams": {<br>    "dns": "kinesis",<br>    "service": "com.amazonaws.%s.kinesis-streams"<br>  },<br>  "kms": null,<br>  "logs": null,<br>  "monitoring": null,<br>  "rds": null,<br>  "redshift": null,<br>  "sagemaker.api": null,<br>  "sagemaker.notebook": {<br>    "dns": "notebook",<br>    "service": "aws.sagemaker.%s.notebook"<br>  },<br>  "sagemaker.runtime": null,<br>  "sagemaker.studio": {<br>    "dns": "studio",<br>    "service": "aws.sagemaker.%s.studio"<br>  },<br>  "secretsmanager": null,<br>  "sns": null,<br>  "sqs": null,<br>  "ssm": null,<br>  "ssmmessages": null,<br>  "sts": null<br>}</pre> | no |
 | <a name="input_lf-tag-shares"></a> [lf-tag-shares](#input\_lf-tag-shares) | Mapping of principals to share data with by LF tag | `any` | n/a | yes |
 | <a name="input_lf-tags"></a> [lf-tags](#input\_lf-tags) | A map of key-value pairs for LF tags in Lake Formation | `map(any)` | n/a | yes |
 | <a name="input_org-shorthand-name"></a> [org-shorthand-name](#input\_org-shorthand-name) | The organization's descriptor, shorthand (e.g. Any Company -> ac) | `string` | `"ac"` | no |
-| <a name="input_partition"></a> [partition](#input\_partition) | The partition to create resources in. | `string` | `"aws"` | no |
+| <a name="input_partition"></a> [partition](#input\_partition) | The partition to create resources in. | `string` | n/a | yes |
 | <a name="input_read-bucket-arns"></a> [read-bucket-arns](#input\_read-bucket-arns) | The ARNs for buckets with read access. | `list(string)` | n/a | yes |
 | <a name="input_redshift-jdbc-url"></a> [redshift-jdbc-url](#input\_redshift-jdbc-url) | The JDBC endpoint URL to use for a Redshift Serverless connection | `string` | n/a | yes |
 | <a name="input_redshift-password"></a> [redshift-password](#input\_redshift-password) | The password to use for a Redshift Serverless connection | `string` | n/a | yes |

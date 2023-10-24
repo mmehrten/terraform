@@ -1,1 +1,0 @@
-/Users/mmehrten/dev/ab3/aws/projects/data-variables.tf

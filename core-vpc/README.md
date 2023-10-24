@@ -1,4 +1,4 @@
-  Create hub VPC with VPC endpoints and an internet gateway, to be used as a transit hub for other VPCs.
+  Create a core VPC for an account with public/private subnets, internet gateway, and NAT gateway.
 
 ## Requirements
 
@@ -14,13 +14,9 @@ No providers.
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_internet-gateway"></a> [internet-gateway](#module\_internet-gateway) | ../../modules/internet-gateway | n/a |
-| <a name="module_organization-root"></a> [organization-root](#module\_organization-root) | ../../modules/organization-root | n/a |
-| <a name="module_s3-logs"></a> [s3-logs](#module\_s3-logs) | ../../modules/s3 | n/a |
-| <a name="module_terraform"></a> [terraform](#module\_terraform) | ../../modules/terraform-infra | n/a |
-| <a name="module_transit-gateway"></a> [transit-gateway](#module\_transit-gateway) | ../../modules/transit-gateway | n/a |
-| <a name="module_vpc"></a> [vpc](#module\_vpc) | ../../modules/vpc | n/a |
-| <a name="module_vpc-endpoints"></a> [vpc-endpoints](#module\_vpc-endpoints) | ../../modules/vpc-endpoints | n/a |
+| <a name="module_internet-gateway"></a> [internet-gateway](#module\_internet-gateway) | ../terraform-main/aws/modules/internet-gateway | n/a |
+| <a name="module_nat-gateway"></a> [nat-gateway](#module\_nat-gateway) | ../terraform-main/aws/modules/nat-gateway | n/a |
+| <a name="module_vpc"></a> [vpc](#module\_vpc) | ../terraform-main/aws/modules/vpc | n/a |
 
 ## Resources
 
@@ -34,7 +30,7 @@ No resources.
 | <a name="input_app-name"></a> [app-name](#input\_app-name) | The longhand name of the app being provisioned. | `string` | n/a | yes |
 | <a name="input_app-shorthand-name"></a> [app-shorthand-name](#input\_app-shorthand-name) | The shorthand name of the app being provisioned. | `string` | n/a | yes |
 | <a name="input_cidr-block"></a> [cidr-block](#input\_cidr-block) | The root CIDR block for the VPC | `string` | n/a | yes |
-| <a name="input_enable-transitgateway"></a> [enable-transitgateway](#input\_enable-transitgateway) | Whether or not to include a Transit Gateway | `bool` | `true` | no |
+| <a name="input_enable-nat"></a> [enable-nat](#input\_enable-nat) | Whether or not to include a nat Gateway | `bool` | `true` | no |
 | <a name="input_partition"></a> [partition](#input\_partition) | The partition to create resources in. | `string` | `"aws"` | no |
 | <a name="input_private-subnets"></a> [private-subnets](#input\_private-subnets) | A mapping of Availability Zone to the CIDR block for the subnet in that AZ. | `map(string)` | n/a | yes |
 | <a name="input_public-subnets"></a> [public-subnets](#input\_public-subnets) | A mapping of Availability Zone to the CIDR block for the subnet in that AZ. | `map(string)` | n/a | yes |

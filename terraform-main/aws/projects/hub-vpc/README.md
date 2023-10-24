@@ -14,6 +14,7 @@ No providers.
 
 | Name | Source | Version |
 |------|--------|---------|
+| <a name="module_kinesis"></a> [kinesis](#module\_kinesis) | ../../modules/kinesis-stream | n/a |
 | <a name="module_redshift"></a> [redshift](#module\_redshift) | ../../modules/redshift | n/a |
 | <a name="module_s3-data"></a> [s3-data](#module\_s3-data) | ../../modules/s3 | n/a |
 | <a name="module_s3-infra"></a> [s3-infra](#module\_s3-infra) | ../../modules/s3 | n/a |
