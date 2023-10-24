@@ -1,5 +1,5 @@
 /*
-*   Create hub VPC with VPC endpoints and an internet gateway, to be used as a transit hub for other VPCs.
+*   Create an MSK cluster with Redshift cluster, and streaming ingestion with Avro and Glue Schema Registry using a NAT gateway or a Lambda function.
 */
 locals {
   base-name = "${var.app-shorthand-name}.${var.region}"

@@ -1,5 +1,5 @@
 /*
-*   Create hub VPC with VPC endpoints and an internet gateway, to be used as a transit hub for other VPCs.
+*   Create a Prometheus and Grafana instance in ECS Fargate.
 */
 locals {
   base-name = "${var.app-shorthand-name}.${var.region}"

@@ -1,5 +1,5 @@
 /*
-*   Create hub VPC with VPC endpoints and an internet gateway, to be used as a transit hub for other VPCs.
+*   Create an OpenSearch cluster and assocaited infrastructure.
 */
 locals {
   base-name = "${var.app-shorthand-name}.${var.region}"
@@ -16,9 +16,9 @@ module "opensearch" {
   base-name          = local.base-name
   partition          = var.partition
 
-  vpc-id          = var.vpc-id
-  domain-name     = replace("${local.base-name}.demo", ".", "-")
-  source          = "../terraform-main/aws/modules/opensearch"
+  vpc-id      = var.vpc-id
+  domain-name = replace("${local.base-name}.demo", ".", "-")
+  source      = "../terraform-main/aws/modules/opensearch"
 }
 
 data "aws_subnets" "main" {

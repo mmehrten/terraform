@@ -11,7 +11,7 @@ terraform {
 }
 
 locals {
-  base-name  = "${var.app-shorthand-name}.${var.region}"
+  base-name = "${var.app-shorthand-name}.${var.region}"
 }
 
 module "terraform" {

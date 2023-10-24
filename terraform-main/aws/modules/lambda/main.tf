@@ -100,7 +100,7 @@ resource "aws_lambda_function" "main" {
     security_group_ids = concat(var.security-group-ids, [for o in aws_security_group.main : o.id])
   }
   layers = var.layer_arns
-  
+
 }
 
 output "lambda_name" {

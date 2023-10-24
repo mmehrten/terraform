@@ -83,7 +83,7 @@ module "glue" {
   tags               = local.tags
   base-name          = local.base-name
 
-  read-bucket-arns    = [
+  read-bucket-arns = [
     "${module.s3-data.outputs.arn}/*",
     "${module.s3-logs.outputs.arn}/*",
     "${module.s3-infra.outputs.arn}/*",
@@ -94,14 +94,14 @@ module "glue" {
     module.s3-logs.outputs.kms-arn,
     module.s3-infra.outputs.kms-arn
   ]
-  write-bucket-arns    = [
+  write-bucket-arns = [
     "${module.s3-data.outputs.arn}/*",
     "${module.s3-logs.outputs.arn}/*",
     module.s3-data.outputs.arn,
     module.s3-logs.outputs.arn,
     module.s3-data.outputs.kms-arn,
     module.s3-logs.outputs.kms-arn,
-  ] 
-  database-name  = "analytics"
-  source                = "../../modules/glue"
+  ]
+  database-name = "analytics"
+  source        = "../../modules/glue"
 }
