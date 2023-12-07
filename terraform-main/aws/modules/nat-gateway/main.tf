@@ -3,7 +3,7 @@
 */
 
 resource "aws_eip" "main" {
-  domain = "vpc"
+  # domain = "vpc"
 }
 resource "aws_nat_gateway" "main" {
   allocation_id = aws_eip.main.id
