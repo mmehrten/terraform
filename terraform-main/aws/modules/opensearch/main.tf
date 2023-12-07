@@ -70,6 +70,7 @@ data "aws_iam_policy_document" "main" {
 }
 
 resource "aws_iam_role" "main" {
+  count              = var.master-password == null ? 1 : 0
   name               = "${var.app-shorthand-name}.iam.role.opensearch-admin"
   assume_role_policy = <<EOF
 {
@@ -90,8 +91,9 @@ EOF
 
 
 resource "aws_iam_role_policy" "main" {
+  count  = var.master-password == null ? 1 : 0
   name   = "${var.app-shorthand-name}.iam.role.opensearch-admin"
-  role   = aws_iam_role.main.id
+  role   = aws_iam_role.main[0].id
   policy = <<EOF
 {
    "Version": "2012-10-17",
@@ -170,9 +172,12 @@ resource "aws_opensearch_domain" "main" {
   advanced_security_options {
     enabled                        = true
     anonymous_auth_enabled         = false
-    internal_user_database_enabled = false
-    master_user_options {
-      master_user_arn = aws_iam_role.main.arn
+    internal_user_database_enabled = var.master-password == null ? false : true
+    dynamic "master_user_options" {
+      for_each = var.master-password == null ? [1] : []
+      content {
+        master_user_arn = aws_iam_role.main[0].arn
+      }
     }
   }
 
@@ -198,7 +203,7 @@ output "arn" {
   value = aws_opensearch_domain.main.arn
 }
 output "iam_role_arn" {
-  value = aws_iam_role.main.arn
+  value = var.master-password == null ? "" : aws_iam_role.main[0].arn
 }
 output "endpoint" {
   value = aws_opensearch_domain.main.endpoint

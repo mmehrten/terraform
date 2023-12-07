@@ -16,9 +16,10 @@ module "opensearch" {
   base-name          = local.base-name
   partition          = var.partition
 
-  vpc-id      = var.vpc-id
-  domain-name = replace("${local.base-name}.demo", ".", "-")
-  source      = "../terraform-main/aws/modules/opensearch"
+  vpc-id          = var.vpc-id
+  domain-name     = replace("${local.base-name}.${var.cluster-id}", ".", "-")
+  master-password = var.opensearch-master-password
+  source          = "../terraform-main/aws/modules/opensearch"
 }
 
 data "aws_subnets" "main" {
@@ -50,6 +51,11 @@ module "cloudwatch-parse-lambda" {
         {
           "Effect" : "Allow",
           "Action" : "kinesis-firehose:*",
+          "Resource" : "*"
+        },
+        {
+          "Effect" : "Allow",
+          "Action" : "kinesis:*",
           "Resource" : "*"
         }
       ]

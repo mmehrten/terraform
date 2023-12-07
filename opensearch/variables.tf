@@ -12,9 +12,14 @@ variable "app-name" {
 }
 variable "opensearch-master-password" {
   type        = string
-  description = ""
+  description = "The master password to use for the OpenSearch user - if empty IAM role will be created"
+  default     = null
 }
 variable "vpc-id" {
   type    = string
   default = true
+}
+variable "cluster-id" {
+  default = "demo"
+  type = string
 }
