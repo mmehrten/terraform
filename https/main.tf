@@ -18,8 +18,11 @@ module "cluster" {
   source = "../terraform-main/aws/modules/ecs-cluster"
 }
 
-data "aws_subnet_ids" "public" {
-  vpc_id = var.vpc-id
+data "aws_subnets" "public" {
+  filter {
+    name   = "vpc-id"
+    values = [var.vpc-id]
+  }
   filter {
     name   = "tag:Name"
     values = ["*public*"]
@@ -263,7 +266,7 @@ resource "aws_ecs_service" "https" {
   task_definition = aws_ecs_task_definition.https.arn
   desired_count   = 2
   network_configuration {
-    subnets          = data.aws_subnet_ids.public.ids
+    subnets          = data.aws_subnets.public.ids
     security_groups  = [aws_security_group.https.id]
     assign_public_ip = true
   }
