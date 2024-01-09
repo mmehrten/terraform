@@ -40,7 +40,7 @@ resource "aws_vpc_endpoint" "access" {
   vpc_id              = var.vpc-id
   service_name        = each.value == null ? "com.amazonaws.${var.region}.${each.key}" : format(each.value.service, var.region)
   vpc_endpoint_type   = "Interface"
-  private_dns_enabled = !var.create-route53-zones
+  private_dns_enabled = !var.create-route53-zones && each.key != "s3"
   security_group_ids  = [aws_security_group.endpoint-security-group.id]
   subnet_ids          = [for o in values(var.subnet-ids) : o]
 
@@ -142,4 +142,16 @@ output "outputs" {
       key => value.zone_id
     }
   }
+}
+
+output "endpoint_ips" {
+  value = {
+    for o in flatten([
+      for k, v in local.route_53_aliases : [
+        for id in v.network_interface_ids : { "key" : k, "id" : id, "value" : v }
+      ]
+      ]) : "${o.key}_${o.id}" => {
+      "ip" : data.aws_network_interface.interface_ips["${o.key}_${o.id}"].private_ip,
+      "az" : data.aws_network_interface.interface_ips["${o.key}_${o.id}"].availability_zone
+  } }
 }

@@ -3,6 +3,7 @@
 */
 
 resource "aws_kms_key" "encrypt-main" {
+  count = var.use-cmk ? 1 : 0
   description             = "${var.bucket-name} KMS key."
   deletion_window_in_days = 30
   enable_key_rotation     = "true"
@@ -12,8 +13,9 @@ resource "aws_kms_key" "encrypt-main" {
 }
 
 resource "aws_kms_alias" "alias" {
+  count = var.use-cmk ? 1 : 0
   name          = replace("alias/${var.base-name}.kms.${var.bucket-name}", ".", "_")
-  target_key_id = aws_kms_key.encrypt-main.key_id
+  target_key_id = aws_kms_key.encrypt-main[0].key_id
 }
 
 resource "aws_s3_bucket" "main" {
@@ -31,9 +33,10 @@ resource "aws_s3_bucket_versioning" "main-versioning" {
 resource "aws_s3_bucket_server_side_encryption_configuration" "main-encryption" {
   bucket = aws_s3_bucket.main.bucket
   rule {
+    bucket_key_enabled = true
     apply_server_side_encryption_by_default {
-      sse_algorithm     = "aws:kms"
-      kms_master_key_id = aws_kms_key.encrypt-main.arn
+      sse_algorithm     = var.use-cmk ? "aws:kms" : "AES256"
+      kms_master_key_id = var.use-cmk ? aws_kms_key.encrypt-main[0].arn : null
     }
   }
 }
