@@ -40,3 +40,4 @@ extract/
 .DS_Store
 
 *.zip
+*.pem

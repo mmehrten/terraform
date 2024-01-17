@@ -14,3 +14,7 @@ variable "vpc-id" {
   type    = string
   default = true
 }
+variable "redshift-master-password" {
+  type        = string
+  description = ""
+}

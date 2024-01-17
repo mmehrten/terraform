@@ -7,24 +7,13 @@ resource "aws_security_group" "main" {
   description = "Security group for msk clusters."
   vpc_id      = var.vpc-id
 
-  # ingress {
-  #   description      = "Allow all inbound connections"
-  #   from_port        = 0
-  #   to_port          = 65535
-  #   protocol         = "tcp"
-  #   cidr_blocks      = ["0.0.0.0/0"]
-  #   ipv6_cidr_blocks = []
-  # }
-
-  # egress {
-  #   description      = "Allow all outbound connections"
-  #   from_port        = 0
-  #   to_port          = 65535
-  #   protocol         = "tcp"
-  #   cidr_blocks      = ["0.0.0.0/0"]
-  #   ipv6_cidr_blocks = []
-  # }
-
+  ingress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
   tags = {
     Name = "${var.base-name}.sg.msk"
   }
@@ -76,6 +65,7 @@ socket.request.max.bytes=104857600
 socket.send.buffer.bytes=102400
 unclean.leader.election.enable=true
 zookeeper.session.timeout.ms=18000
+allow.everyone.if.no.acl.found=false
 EOF
 }
 resource "aws_msk_cluster" "main" {
@@ -88,7 +78,7 @@ resource "aws_msk_cluster" "main" {
     revision = aws_msk_configuration.main.latest_revision
   }
   broker_node_group_info {
-    instance_type  = "kafka.t3.small"
+    instance_type  = "kafka.m5.large"
     client_subnets = data.aws_subnets.main.ids
     storage_info {
       ebs_storage_info {
@@ -100,6 +90,15 @@ resource "aws_msk_cluster" "main" {
       public_access {
         type = "DISABLED"
       }
+      vpc_connectivity {
+        client_authentication {
+          tls = true
+          sasl {
+            iam   = true
+            scram = true
+          }
+        }
+      }
     }
   }
 
@@ -108,17 +107,17 @@ resource "aws_msk_cluster" "main" {
       iam   = true
       scram = true
     }
-    # tls {
-    #   certificate_authority_arns = []
-    # }
-    unauthenticated = true
+    tls {
+      certificate_authority_arns = var.tls-certificate-arns
+    }
+    unauthenticated = false
   }
 
   encryption_info {
     encryption_at_rest_kms_key_arn = aws_kms_key.main.arn
     encryption_in_transit {
       in_cluster    = true
-      client_broker = "TLS_PLAINTEXT"
+      client_broker = "TLS"
     }
   }
 
@@ -139,18 +138,13 @@ resource "aws_msk_cluster" "main" {
         enabled   = true
         log_group = aws_cloudwatch_log_group.main.name
       }
-      # firehose {
-      #   enabled         = true
-      #   delivery_stream = aws_kinesis_firehose_delivery_stream.test_stream.name
-      # }
-      # s3 {
-      #   enabled = true
-      #   bucket  = aws_s3_bucket.bucket.id
-      #   prefix  = "logs/msk-"
-      # }
     }
   }
 
+}
+
+data "aws_msk_broker_nodes" "main" {
+  cluster_arn = aws_msk_cluster.main.arn
 }
 
 output "cluster_arn" {
@@ -167,16 +161,32 @@ output "bootstrap_brokers_tls" {
 }
 
 output "bootstrap_brokers" {
-  description = "TLS connection host:port pairs"
+  description = "Unauthenticated connection host:port pairs"
   value       = aws_msk_cluster.main.bootstrap_brokers
 }
 
 output "bootstrap_brokers_sasl_iam" {
-  description = "TLS connection host:port pairs"
+  description = "SASL IAM connection host:port pairs"
   value       = aws_msk_cluster.main.bootstrap_brokers_sasl_iam
 }
 
 output "bootstrap_brokers_sasl_scram" {
-  description = "TLS connection host:port pairs"
+  description = "SASL SCRAM connection host:port pairs"
   value       = aws_msk_cluster.main.bootstrap_brokers_sasl_scram
+}
+
+output "bootstrap_brokers_vpc_connectivity_sasl_iam" {
+  description = "Multi-VPC SASL IAM connection host:port pairs"
+  value       = aws_msk_cluster.main.bootstrap_brokers_vpc_connectivity_sasl_iam
+}
+output "bootstrap_brokers_vpc_connectivity_sasl_scram" {
+  description = "Multi-VPC SASL SCRAM connection host:port pairs"
+  value       = aws_msk_cluster.main.bootstrap_brokers_vpc_connectivity_sasl_scram
+}
+output "bootstrap_brokers_vpc_connectivity_tls" {
+  description = "Multi-VPC TLS connection host:port pairs"
+  value       = aws_msk_cluster.main.bootstrap_brokers_vpc_connectivity_tls
+}
+output "broker_nodes" {
+  value = data.aws_msk_broker_nodes.main.node_info_list
 }

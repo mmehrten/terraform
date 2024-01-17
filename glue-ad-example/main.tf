@@ -94,3 +94,19 @@ resource "aws_lambda_permission" "main" {
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.main.arn
 }
+
+module "redshift" {
+  region             = var.region
+  account-id         = var.account-id
+  app-shorthand-name = var.app-shorthand-name
+  app-name           = var.app-name
+  terraform-role     = var.terraform-role
+  tags               = var.tags
+  base-name          = local.base-name
+  partition          = var.partition
+
+  vpc-id          = var.vpc-id
+  database-name   = "dev"
+  master-password = var.redshift-master-password
+  source          = "../terraform-main/aws/modules/redshift"
+}
