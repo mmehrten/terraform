@@ -70,6 +70,7 @@ data "aws_iam_policy_document" "main" {
 }
 
 resource "aws_iam_role" "main" {
+  count              = var.master-password == null ? 1 : 0
   name               = "${var.app-shorthand-name}.iam.role.opensearch-admin"
   assume_role_policy = <<EOF
 {
@@ -90,8 +91,9 @@ EOF
 
 
 resource "aws_iam_role_policy" "main" {
+  count  = var.master-password == null ? 1 : 0
   name   = "${var.app-shorthand-name}.iam.role.opensearch-admin"
-  role   = aws_iam_role.main.id
+  role   = aws_iam_role.main[0].id
   policy = <<EOF
 {
    "Version": "2012-10-17",
@@ -170,9 +172,19 @@ resource "aws_opensearch_domain" "main" {
   advanced_security_options {
     enabled                        = true
     anonymous_auth_enabled         = false
-    internal_user_database_enabled = false
-    master_user_options {
-      master_user_arn = aws_iam_role.main.arn
+    internal_user_database_enabled = var.master-password == null ? false : true
+    dynamic "master_user_options" {
+      for_each = var.master-password == null ? [1] : []
+      content {
+        master_user_arn = aws_iam_role.main[0].arn
+      }
+    }
+    dynamic "master_user_options" {
+      for_each = var.master-password == null ? [] : [1]
+      content {
+        master_user_name     = "admin"
+        master_user_password = var.master-password
+      }
     }
   }
 
@@ -194,11 +206,54 @@ resource "aws_opensearch_domain" "main" {
 
 }
 
+
+resource "aws_opensearch_domain_saml_options" "main" {
+  domain_name = aws_opensearch_domain.main.domain_name
+
+  saml_options {
+    enabled                 = true
+    roles_key               = "Role"
+    session_timeout_minutes = 60
+
+    idp {
+      entity_id        = "urn:dev-rd4ugvvduiwgubhu.us.auth0.com"
+      metadata_content = <<-EOT
+<EntityDescriptor entityID="urn:dev-rd4ugvvduiwgubhu.us.auth0.com" xmlns="urn:oasis:names:tc:SAML:2.0:metadata">
+  <IDPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+    <KeyDescriptor use="signing">
+      <KeyInfo xmlns="http://www.w3.org/2000/09/xmldsig#">
+        <X509Data>
+          <X509Certificate>MIIDHTCCAgWgAwIBAgIJcDbfCgyg+/RyMA0GCSqGSIb3DQEBCwUAMCwxKjAoBgNVBAMTIWRldi1yZDR1Z3Z2ZHVpd2d1Ymh1LnVzLmF1dGgwLmNvbTAeFw0yMzA3MjUxNjM3NDlaFw0zNzA0MDIxNjM3NDlaMCwxKjAoBgNVBAMTIWRldi1yZDR1Z3Z2ZHVpd2d1Ymh1LnVzLmF1dGgwLmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKh6zEFxHwgU1rSExiVywilygGKZxock4Hw81qr+JaeTuvsMpNIiKbnuuEchw4gvs746sXO8k4GHdNScm2kyXzTbVZeYfscofaTwD9wkxFsfHBcGxmPdkRbWG80j8KqqBKIrtaTqxYb4V82Cj779C1A2yj/mSIfzRf6NTIOkUQv7ZeI+bGZDrN7UtV8g5b8SB+rQjxxtxEWzyPfdoTdTIaInrXA8Kkm66NjnHYE22JYT4bctI2RjWpS2fV1IgDltESRy5lQP7Xw0FZV1Dv7AKz/fPw0KrF4ezRLaVjx4/Oo4Lrlv/3iVfY6w67Jocf1Ik0HDcO4sK+grGH4m4wpYBzcCAwEAAaNCMEAwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQU4RXRTzywWUq18eLvWYn3/7dh2wcwDgYDVR0PAQH/BAQDAgKEMA0GCSqGSIb3DQEBCwUAA4IBAQBWHl3vKGnDZ5hmakGwP1qpLsShwbBCNQnKuZkAHPOk4xoYFEHRPuc+woOBjru/uTFO4ahfrhrdDcW+Wnbbkw0WJIiQnmNDRCOllTt3St/b1xfPWzYiAN9847wsh7/7jhzEAsB6yXQ2Ukw5rlkaecG4KH8FJNmDq6OK6pyKGCQOmBJcXT7ryzEwlaqliIoLTe0WaQ5kgUgfEF3aUUKlsxb3528nnqgh9EQSJSIJW7ziAJ02PgqH2ey6VyAdKoM2si14G9z8USQGd+2JcvaMkGzUa4AAADE+OkyC/uMUy91RhdgjDKgAQNECy79kyaESPdnix0QBp+lM3TFEPd/Cldpw</X509Certificate>
+        </X509Data>
+      </KeyInfo>
+    </KeyDescriptor>
+    <SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://dev-rd4ugvvduiwgubhu.us.auth0.com/samlp/oL1MXfieBEV6spQb4DAcZdTPWMLdz8xa/logout"/>
+    <SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://dev-rd4ugvvduiwgubhu.us.auth0.com/samlp/oL1MXfieBEV6spQb4DAcZdTPWMLdz8xa/logout"/>
+    <NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</NameIDFormat>
+    <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:persistent</NameIDFormat>
+    <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</NameIDFormat>
+    <SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://dev-rd4ugvvduiwgubhu.us.auth0.com/samlp/oL1MXfieBEV6spQb4DAcZdTPWMLdz8xa"/>
+    <SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://dev-rd4ugvvduiwgubhu.us.auth0.com/samlp/oL1MXfieBEV6spQb4DAcZdTPWMLdz8xa"/>
+    <Attribute Name="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" FriendlyName="E-Mail Address" xmlns="urn:oasis:names:tc:SAML:2.0:assertion"/>
+    <Attribute Name="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" FriendlyName="Given Name" xmlns="urn:oasis:names:tc:SAML:2.0:assertion"/>
+    <Attribute Name="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" FriendlyName="Name" xmlns="urn:oasis:names:tc:SAML:2.0:assertion"/>
+    <Attribute Name="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" FriendlyName="Surname" xmlns="urn:oasis:names:tc:SAML:2.0:assertion"/>
+    <Attribute Name="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" FriendlyName="Name ID" xmlns="urn:oasis:names:tc:SAML:2.0:assertion"/>
+  </IDPSSODescriptor>
+</EntityDescriptor>
+EOT 
+    }
+  }
+}
+
 output "arn" {
   value = aws_opensearch_domain.main.arn
 }
 output "iam_role_arn" {
-  value = aws_iam_role.main.arn
+  value = var.master-password == null ? aws_iam_role.main[0].arn : ""
+}
+output "iam_role_id" {
+  value = var.master-password == null ? aws_iam_role.main[0].id : ""
 }
 output "endpoint" {
   value = aws_opensearch_domain.main.endpoint

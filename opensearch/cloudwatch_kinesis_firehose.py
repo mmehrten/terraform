@@ -21,7 +21,9 @@ def processRecords(records):
                     e["raw"] = message
                 except Exception as e:
                     pass
-            encodedData = base64.b64encode(json.dumps(data).encode("utf-8")).decode("utf-8")
+            encodedData = base64.b64encode(json.dumps(data).encode("utf-8")).decode(
+                "utf-8"
+            )
             yield {"data": encodedData, "result": "Ok", "recordId": recId}
         else:
             yield {"result": "ProcessingFailed", "recordId": recId}

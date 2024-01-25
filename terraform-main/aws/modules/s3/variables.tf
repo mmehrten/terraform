@@ -12,3 +12,8 @@ variable "expiration-days" {
   default     = 0
   type        = number
 }
+variable "use-cmk" {
+  description = "Whether or not to use a CMK for encryption vs. SSE-S3."
+  default     = true
+  type        = bool
+}
