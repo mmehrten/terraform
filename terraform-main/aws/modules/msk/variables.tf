@@ -6,6 +6,6 @@ variable "vpc-id" {
 
 variable "tls-certificate-arns" {
   description = "ARNs of the ACM certs to use for TLS"
-  type = list(string)
-  default = [ ]
+  type        = list(string)
+  default     = []
 }

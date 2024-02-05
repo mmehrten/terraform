@@ -36,11 +36,11 @@ resource "aws_acmpca_certificate" "main" {
   }
 }
 
-output "certificate"{
+output "certificate" {
   value = aws_acmpca_certificate_authority_certificate.main.certificate
 }
 
-output "certificate_authority_arn"{
+output "certificate_authority_arn" {
   value = aws_acmpca_certificate_authority_certificate.main.certificate_authority_arn
 }
 

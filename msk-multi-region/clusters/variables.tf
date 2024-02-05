@@ -22,7 +22,7 @@ variable "private-subnets" {
   type        = map(string)
   description = "A mapping of Availability Zone to the CIDR block for the subnet in that AZ."
 }
-variable private-cert-passphrase {
+variable "private-cert-passphrase" {
   description = "The passphrase for the client certificate for MSK"
-  type = string
+  type        = string
 }

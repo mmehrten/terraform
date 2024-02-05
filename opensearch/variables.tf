@@ -21,5 +21,5 @@ variable "vpc-id" {
 }
 variable "cluster-id" {
   default = "demo"
-  type = string
+  type    = string
 }

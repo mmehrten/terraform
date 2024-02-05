@@ -117,3 +117,45 @@ def produce_registry_avro(event):
             _producer.send(stream_name, _json_to_avro(registry_name, stream_name, data))
         _producer.flush(timeout=1)
         logger.info(f"Finished with: {_producer}")
+
+
+def produce_simple(connection_type, bootstrap_servers, region, data, topic, **kwargs):
+    if "plaintext" in connection_type:
+        producer = KafkaProducer(
+            bootstrap_servers=bootstrap_servers, api_version=(0, 11, 5)
+        )
+    if "tls" in connection_type:
+        context = ssl.create_default_context(
+            ssl.Purpose.CLIENT_AUTH, cafile=f"CertificateChain.{region}.pem"
+        )
+        context.load_cert_chain(
+            certfile=f"Certificate.{region}.pem",
+            keyfile=f"PrivateKey.{region}.pem",
+            password=os.environ["AWS_ACM_CERT_PASS"],
+        )
+        producer = KafkaProducer(
+            bootstrap_servers=bootstrap_servers,
+            security_protocol="SSL",
+            ssl_context=context,
+        )
+    if "scram" in connection_type:
+        producer = KafkaProducer(
+            security_protocol="SASL_SSL",
+            sasl_mechanism="SCRAM-SHA-512",
+            sasl_plain_username="demo",
+            sasl_plain_password=os.environ["AWS_ACM_CERT_PASS"],
+            bootstrap_servers=bootstrap_servers,
+        )
+    if "iam" in connection_type:
+        producer = KafkaProducer(
+            bootstrap_servers=bootstrap_servers,
+            security_protocol="SASL_SSL",
+            sasl_mechanism="OAUTHBEARER",
+            sasl_oauth_token_provider=MSKTokenProvider(region),
+            request_timeout_ms=1000,
+        )
+
+    logger.info(f"Producing with: {producer}")
+    producer.send(topic, json.dumps(data).encode('utf-8'))
+    producer.flush(timeout=1)
+    logger.info(f"Finished with: {producer}")
