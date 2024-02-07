@@ -18,8 +18,11 @@ module "cluster" {
   source = "../terraform-main/aws/modules/ecs-cluster"
 }
 
-data "aws_subnet_ids" "public" {
-  vpc_id = var.vpc-id
+data "aws_subnets" "public" {
+  filter{
+    name = "vpc-id"
+    values = [var.vpc-id]
+  }
   filter {
     name   = "tag:Name"
     values = ["*public*"]
@@ -247,7 +250,7 @@ resource "aws_ecs_service" "dataprepper" {
   task_definition = aws_ecs_task_definition.dataprepper.arn
   desired_count   = 1
   network_configuration {
-    subnets          = data.aws_subnet_ids.public.ids
+    subnets          = data.aws_subnets.public.ids
     security_groups  = [aws_security_group.dataprepper.id]
     assign_public_ip = true
   }
@@ -290,7 +293,7 @@ module "cloudwatch-parse-lambda" {
   handler    = "cloudwatch_dataprepper.lambda_handler"
   runtime    = "python3.9"
   vpc-id     = var.vpc-id
-  subnet-ids = data.aws_subnet_ids.public.ids
+  subnet-ids = data.aws_subnets.public.ids
   source     = "../terraform-main/aws/modules/lambda"
   timeout    = 300
   layer_arns = [
