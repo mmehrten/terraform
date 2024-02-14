@@ -147,6 +147,9 @@ data "aws_msk_broker_nodes" "main" {
   cluster_arn = aws_msk_cluster.main.arn
 }
 
+output "cluster_name" {
+  value = aws_msk_cluster.main.cluster_name
+}
 output "cluster_arn" {
   value = aws_msk_cluster.main.arn
 }

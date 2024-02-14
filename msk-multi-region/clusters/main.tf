@@ -89,27 +89,6 @@ module "msk" {
   tls-certificate-arns = [module.pca.certificate_authority_arn]
 }
 
-
-data "aws_subnet" "selected" {
-  for_each = { for o in module.msk.broker_nodes : o.broker_id => o }
-  id       = each.value.client_subnet
-}
-output "broker_nodes" {
-  value = [
-    for o in module.msk.broker_nodes : {
-      "ip" : o.client_vpc_ip_address,
-      "id" : o.broker_id,
-      "availability_zone" : data.aws_subnet.selected[o.broker_id].availability_zone
-    }
-  ]
-}
-output "broker_zone" {
-  value = join(".", slice(split(".", split(":", module.msk.bootstrap_brokers_sasl_iam)[0]), 1, 8))
-}
-output "vpc_id" {
-  value = module.vpc.outputs.vpc-id
-}
-
 module "kafka-publisher-lambda" {
   region             = var.region
   account-id         = var.account-id
@@ -156,3 +135,23 @@ module "kafka-publisher-lambda" {
   }
   source = "../../terraform-main/aws/modules/lambda"
 }
+
+# data "aws_subnet" "selected" {
+#   for_each   = { for o in module.msk.broker_nodes : o.broker_id => o }
+#   id         = each.value.client_subnet
+# }
+# output "broker_nodes" {
+#   value = [
+#     for o in module.msk.broker_nodes : {
+#       "ip" : o.client_vpc_ip_address,
+#       "id" : o.broker_id,
+#       "availability_zone" : data.aws_subnet.selected[o.broker_id].availability_zone
+#     }
+#   ]
+# }
+# output "broker_zone" {
+#   value = join(".", slice(split(".", split(":", module.msk.bootstrap_brokers_sasl_iam)[0]), 1, 8))
+# }
+# output "vpc_id" {
+#   value = module.vpc.outputs.vpc-id
+# }

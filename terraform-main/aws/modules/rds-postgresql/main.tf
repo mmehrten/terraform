@@ -101,4 +101,6 @@ output "master_username" {
 output "kms_arn" {
   value = aws_kms_key.main.arn
 }
-
+output "endpoint" {
+  value = aws_rds_cluster.main.endpoint
+}
