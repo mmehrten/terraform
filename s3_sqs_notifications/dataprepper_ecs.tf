@@ -1,23 +1,3 @@
-variable "vpc_id" {
-  description = "The VPC to deploy DataPrepper in"
-  type        = string
-}
-
-variable "service_prefix" {
-  description = "The prefix to use for the service name"
-  type        = string
-}
-
-variable "opensearch_arn" {
-  description = "The ARN of the OpenSearch cluster"
-  type        = string
-}
-
-variable "kms_key_arn" {
-  description = "The ARN of the KMS key for S3"
-  type        = string
-}
-
 data "aws_caller_identity" "current" {}
 
 data "aws_subnets" "public" {
@@ -94,7 +74,10 @@ resource "aws_iam_policy" "ecs_task_custom_policy" {
             "s3:ListBucket",
             "s3:DeleteObject"
           ],
-          "Resource" : "${var.s3_bucket_arn}/*"
+          "Resource" : [
+            "${var.logs_s3_bucket_arn}/*",
+            "arn:${var.partition}:s3:::${var.pipeline_config_bucket_name}"
+          ]
         },
         {
           "Sid" : "AllowSQSRead",
@@ -195,7 +178,10 @@ resource "aws_ecs_task_definition" "dataprepper" {
           "awslogs-group" : "${aws_cloudwatch_log_group.main.name}",
           "awslogs-region": "${var.region}",
           "awslogs-stream-prefix": "ecs"
-      }
+      },
+      "environment": [
+        {"name": "PIPELINES_S3_BUCKET", "value": "${var.pipeline_config_bucket_name}"}
+      ]
     },
     "portMappings": []
   }
