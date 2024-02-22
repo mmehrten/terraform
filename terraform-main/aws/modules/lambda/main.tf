@@ -66,7 +66,7 @@ EOF
 data "archive_file" "main" {
   type        = "zip"
   source_file = endswith(var.file-path, "/") ? null : var.file-path
-  source_dir = endswith(var.file-path, "/") ? var.file-path : null
+  source_dir  = endswith(var.file-path, "/") ? var.file-path : null
   output_path = "${var.name}.zip"
 }
 

@@ -1,0 +1,94 @@
+ss4o-app-pipeline:
+  source:
+    s3:
+      notification_type: sqs
+      notification_source: s3
+      compression: gzip
+      codec: 
+        newline: 
+      sqs:
+        queue_url: https://sqs.us-gov-west-1.amazonaws.com/053633994311/dataprepper-logs-example-app
+        maximum_messages: 100
+        visibility_timeout: 30s
+        wait_time: 20s
+        poll_delay: 0s
+        visibility_duplication_protection: true
+      bucket_owners:
+        default: 053633994311
+  processor:
+    - date:
+      from_time_received: true
+      destination: @timestamp
+    - rename_keys:
+        entries:
+          # - from_key: parsed
+          #   to_key: aws/cloudtrail
+          - from_key: message
+            to_key: body
+          # - from_key: timestamp
+          #   to_key: observedTimestamp
+          # - from_key: logGroup
+          #   to_key: event/log_group
+          # - from_key: logStream
+          #   to_key: event/log_stream
+          # - from_key: owner
+          #   to_key: cloud/account/id
+    # - copy_values:
+    #     entries:
+          # - from_key: aws/cloudtrail/eventTime
+          #   to_key: @timestamp
+          # - from_key: aws/cloudtrail/eventId
+          #   to_key: traceId
+          # - from_key: aws/cloudtrail/awsRegion
+          #   to_key: cloud/region
+          # - from_key: aws/cloudtrail/cloud/account/name
+          #   to_key: cloud/account/name
+          # - from_key: aws/cloudtrail/eventSource
+          #   to_key: cloud/service/name
+    - add_entries:
+        entries:
+          # https://github.com/opensearch-project/opensearch-catalog/tree/main/docs/schema/observability/logs
+          - key: attributes/data_stream/dataset
+            value: app
+          - key: attributes/data_stream/namespace
+            value: production
+          - key: attributes/data_stream/type
+            value: app
+          - key: event/domain
+            value: app
+          - key: event/source
+            value: s3
+          - key: event/name
+            value: app
+          - key: event/result
+            value:  accept
+          - key: event/kind
+            value: event
+          - key: event/category
+            value: custom
+          - key: cloud/provider
+            value: aws
+          - key: event/type
+            value: custom
+    - delete_entries:
+        with_keys: [parsed]
+          # TODO: How to identify an ARN consistently???
+          # - from_key: parsed/cloud/resource_id
+          #   to_key: cloud/resource_id
+  sink:
+    - opensearch:
+      hosts: [https://vpc-os-zwy2-us-gov-west-1-demo-mnfhpkqgmzrlgwkqh2kulkfnqy.us-gov-west-1.es.amazonaws.com]
+      aws_sigv4: true
+      aws_region: us-gov-west-1
+      max_retries: 5
+      socket_timeout: 10
+      connect_timeout: 10
+      index_type: custom
+      index: dataprepper-app-%{yyyy.MM.dd}
+      document_id_field: abc
+      bulk_size: 5
+      dlq:
+        s3:
+          bucket: core-zwy2.us-gov-west-1.s3.analytics.v2
+          key_path_prefix: dlq-files/app/
+          region: us-gov-west-1

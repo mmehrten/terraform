@@ -4,7 +4,7 @@
 
 resource "aws_acm_certificate" "main" {
   certificate_authority_arn = var.pca-arn
-  domain_name       = var.domain-name
+  domain_name               = var.domain-name
   subject_alternative_names = var.subject-alternative-names
 }
 

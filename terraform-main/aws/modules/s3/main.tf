@@ -3,7 +3,7 @@
 */
 
 resource "aws_kms_key" "encrypt-main" {
-  count = var.use-cmk ? 1 : 0
+  count                   = var.use-cmk ? 1 : 0
   description             = "${var.bucket-name} KMS key."
   deletion_window_in_days = 30
   enable_key_rotation     = "true"
@@ -13,7 +13,7 @@ resource "aws_kms_key" "encrypt-main" {
 }
 
 resource "aws_kms_alias" "alias" {
-  count = var.use-cmk ? 1 : 0
+  count         = var.use-cmk ? 1 : 0
   name          = replace("alias/${var.base-name}.kms.${var.bucket-name}", ".", "_")
   target_key_id = aws_kms_key.encrypt-main[0].key_id
 }

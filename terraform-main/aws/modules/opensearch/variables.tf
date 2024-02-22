@@ -9,5 +9,5 @@ variable "vpc-id" {
 }
 variable "master-password" {
   description = "Master password to use, if not using IAM"
-  type = string
+  type        = string
 }

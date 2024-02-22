@@ -39,7 +39,7 @@ module "s3-data" {
 
   bucket-name = "${local.base-name}.s3.static-web"
   versioning  = false
-  use-cmk = false
+  use-cmk     = false
   source      = "../terraform-main/aws/modules/s3"
 }
 
@@ -58,7 +58,7 @@ module "intf" {
   subnet-ids           = { for o in data.aws_subnets.main.ids : o => o }
   route-table-ids      = data.aws_route_tables.main.ids
   create-route53-zones = true
-  create-org-zone = false
+  create-org-zone      = false
   endpoints            = { "s3" : null }
 }
 
@@ -91,12 +91,12 @@ resource "aws_security_group" "main" {
 }
 
 resource "aws_lb" "main" {
-  name               = replace("${local.base-name}.alb.lb", ".", "-")
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.main.id]
-  subnets            = data.aws_subnets.main.ids
+  name                       = replace("${local.base-name}.alb.lb", ".", "-")
+  load_balancer_type         = "application"
+  security_groups            = [aws_security_group.main.id]
+  subnets                    = data.aws_subnets.main.ids
   enable_deletion_protection = false
-  internal = true
+  internal                   = true
 }
 
 resource "aws_lb_target_group" "main" {
@@ -107,12 +107,12 @@ resource "aws_lb_target_group" "main" {
   vpc_id      = var.vpc-id
   health_check {
     protocol = "http"
-    matcher= "307"
+    matcher  = "307"
   }
 }
 
 resource "aws_lb_target_group_attachment" "main" {
-  for_each = module.intf.endpoint_ips
+  for_each         = module.intf.endpoint_ips
   target_group_arn = aws_lb_target_group.main.arn
   target_id        = each.value.ip
   port             = 80
@@ -135,10 +135,10 @@ resource "aws_lb_listener_rule" "static" {
   priority     = 100
 
   action {
-    type             = "redirect"
+    type = "redirect"
     redirect {
-      path = "/#{path}index.html"
-      port = "#{port}"
+      path        = "/#{path}index.html"
+      port        = "#{port}"
       status_code = "HTTP_301"
     }
   }
@@ -158,12 +158,12 @@ resource "aws_route53_zone" "main" {
 }
 
 resource "aws_route53_record" "main" {
-  zone_id = aws_route53_zone.main.zone_id
-  name    = "*.s3.static-web"
-  type     = "CNAME"
+  zone_id        = aws_route53_zone.main.zone_id
+  name           = "*.s3.static-web"
+  type           = "CNAME"
   set_identifier = "alb"
   records        = [aws_lb.main.dns_name]
-  ttl     = 5
+  ttl            = 5
 
   weighted_routing_policy {
     weight = 100

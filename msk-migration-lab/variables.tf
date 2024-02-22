@@ -26,3 +26,6 @@ variable "private-cert-passphrase" {
   description = "The passphrase for the client certificate for MSK"
   type        = string
 }
+variable "vpc-id" {
+  type = string
+}

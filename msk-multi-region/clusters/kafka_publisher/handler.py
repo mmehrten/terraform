@@ -7,7 +7,7 @@ from kafka_admin import (
     create_admin_principal,
     create_east_west_tls_principals,
 )
-from kafka_publisher import produce_conn_test, produce_registry_avro
+from kafka_publisher import produce_conn_test, produce_registry_avro, produce_simple
 
 logger = Logger()
 
@@ -29,6 +29,8 @@ def handler(event, context):
             produce_registry_avro(event)
         elif event["type"] == "create_acl":
             create_acl(**event)
+        elif event["type"] == "produce_simple":
+            produce_simple(**event)
         else:
             raise NotImplementedError()
         return json.dumps({"success": True})
