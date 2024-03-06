@@ -45,7 +45,7 @@ resource "aws_kms_alias" "alias" {
 }
 
 resource "aws_cloudwatch_log_group" "main" {
-  name = "/aws/msk/broker"
+  name = "/aws/msk/broker/${var.base-name}"
 }
 
 resource "aws_msk_configuration" "main" {
@@ -53,11 +53,12 @@ resource "aws_msk_configuration" "main" {
   name              = replace("${var.base-name}.msk.config", ".", "-")
   server_properties = <<EOF
 auto.create.topics.enable=true
+log.retention.hours=8
 default.replication.factor=3
 min.insync.replicas=2
 num.io.threads=8
 num.network.threads=5
-num.partitions=1
+num.partitions=6
 num.replica.fetchers=2
 replica.lag.time.max.ms=30000
 socket.receive.buffer.bytes=102400
@@ -92,7 +93,7 @@ resource "aws_msk_cluster" "main" {
       }
       vpc_connectivity {
         client_authentication {
-          tls = true
+          tls = length(var.tls-certificate-arns) > 0 ? true : false
           sasl {
             iam   = true
             scram = true
@@ -140,7 +141,100 @@ resource "aws_msk_cluster" "main" {
       }
     }
   }
+}
 
+resource "aws_iam_role" "main" {
+  name = "${var.app-shorthand-name}.iam.role.msk.admin"
+  assume_role_policy = jsonencode(
+    {
+      "Version" : "2012-10-17",
+      "Statement" : [
+        {
+          "Action" : "sts:AssumeRole",
+          "Principal" : {
+            "Service" : ["lambda.amazonaws.com", "kafkaconnect.amazonaws.com"]
+          },
+          "Effect" : "Allow"
+        }
+      ]
+    }
+  )
+}
+
+
+resource "aws_iam_role_policy" "main" {
+  name = "${var.app-shorthand-name}.iam.role.msk.admin"
+  role = aws_iam_role.main.id
+  policy = jsonencode(
+    {
+      "Version" : "2012-10-17",
+      "Statement" : [
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "kafka-cluster:Connect",
+            "kafka-cluster:AlterCluster",
+            "kafka-cluster:DescribeCluster",
+            "kafka-cluster:DescribeClusterDynamicConfiguration",
+            "kafka-cluster:AlterClusterDynamicConfiguration",
+            "kafka-cluster:WriteDataIdempotently",
+          ],
+          "Resource" : "arn:${var.partition}:kafka:${var.region}:${var.account-id}:cluster/${aws_msk_cluster.main.cluster_name}/*"
+        },
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "kafka-cluster:CreateTopic",
+            "kafka-cluster:DescribeTopic",
+            "kafka-cluster:AlterTopic",
+            "kafka-cluster:DeleteTopic",
+            "kafka-cluster:DescribeTopicDynamicConfiguration",
+            "kafka-cluster:AlterTopicDynamicConfiguration",
+            "kafka-cluster:WriteData",
+            "kafka-cluster:ReadData"
+          ],
+          "Resource" : "arn:${var.partition}:kafka:${var.region}:${var.account-id}:topic/${aws_msk_cluster.main.cluster_name}/*"
+        },
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "kafka-cluster:AlterGroup",
+            "kafka-cluster:DeleteGroup",
+            "kafka-cluster:DescribeGroup"
+          ],
+          "Resource" : "arn:${var.partition}:kafka:${var.region}:${var.account-id}:group/${aws_msk_cluster.main.cluster_name}/*"
+        },
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "kafka-cluster:DescribeTransactionalId",
+            "kafka-cluster:AlterTransactionalId",
+          ],
+          "Resource" : "arn:${var.partition}:kafka:${var.region}:${var.account-id}:transactional-id/${aws_msk_cluster.main.cluster_name}/*"
+        },
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "logs:CreateLogGroup",
+            "logs:CreateLogStream",
+            "logs:DescribeLogStreams",
+            "logs:PutLogEvents",
+            "logs:GetLogEvents"
+          ],
+          "Resource" : [
+            "arn:${var.partition}:logs:${var.region}:${var.account-id}:log-group:*",
+            "arn:${var.partition}:logs:${var.region}:${var.account-id}:log-group:*:*",
+            "arn:${var.partition}:logs:${var.region}:${var.account-id}:log-stream:*",
+            "arn:${var.partition}:logs:${var.region}:${var.account-id}:log-stream:*:*",
+          ]
+        }
+      ]
+    }
+  )
+}
+
+output "admin_iam_role_arn" {
+  value = aws_iam_role.main.arn
 }
 
 data "aws_msk_broker_nodes" "main" {
@@ -192,4 +286,7 @@ output "bootstrap_brokers_vpc_connectivity_tls" {
 }
 output "broker_nodes" {
   value = data.aws_msk_broker_nodes.main.node_info_list
+}
+output "security_group_id" {
+  value = aws_security_group.main.id
 }

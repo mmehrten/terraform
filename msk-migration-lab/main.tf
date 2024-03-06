@@ -77,14 +77,28 @@ module "acm" {
   domain-name = "${local.base-name}.client"
   pca-arn     = module.pca.certificate_authority_arn
 }
-module "msk" {
+module "msk-source" {
   region             = var.region
   account-id         = var.account-id
   app-shorthand-name = var.app-shorthand-name
   app-name           = var.app-name
   terraform-role     = var.terraform-role
   tags               = var.tags
-  base-name          = local.base-name
+  base-name          = "${local.base-name}.source"
+  partition          = var.partition
+
+  vpc-id               = var.vpc-id
+  source               = "../terraform-main/aws/modules/msk"
+  tls-certificate-arns = [module.pca.certificate_authority_arn]
+}
+module "msk-target" {
+  region             = var.region
+  account-id         = var.account-id
+  app-shorthand-name = var.app-shorthand-name
+  app-name           = var.app-name
+  terraform-role     = var.terraform-role
+  tags               = var.tags
+  base-name          = "${local.base-name}.target"
   partition          = var.partition
 
   vpc-id               = var.vpc-id
@@ -114,18 +128,6 @@ resource "aws_iam_policy" "ecs_task_custom_policy" {
       "Version" : "2012-10-17",
       "Statement" : [
         {
-          "Sid" : "AllowReadingTagsInstancesRegionsFromEC2",
-          "Effect" : "Allow",
-          "Action" : ["ec2:DescribeTags", "ec2:DescribeInstances", "ec2:DescribeRegions"],
-          "Resource" : "*"
-        },
-        {
-          "Sid" : "AllowReadingResourcesForTags",
-          "Effect" : "Allow",
-          "Action" : "tag:GetResources",
-          "Resource" : "*"
-        },
-        {
           "Sid" : "AllowExecuteCommand",
           "Effect" : "Allow",
           "Action" : [
@@ -135,6 +137,30 @@ resource "aws_iam_policy" "ecs_task_custom_policy" {
             "ssmmessages:OpenDataChannel"
           ],
           "Resource" : "*"
+        },
+        {
+          "Sid" : "AllowIdentifyECSTasks",
+          "Effect" : "Allow",
+          "Action" : [
+            "ecs:List*",
+            "ecs:Describe*"
+          ],
+          "Resource" : [
+            "*"
+          ]
+        },
+        {
+          "Sid" : "AllowS3IO",
+          "Effect" : "Allow",
+          "Action" : [
+            "s3:GetObject",
+            "s3:PutObject",
+            "s3:ListBucket",
+          ],
+          "Resource" : [
+            "arn:${var.partition}:s3:::${aws_s3_bucket.main.bucket}",
+            "arn:${var.partition}:s3:::${aws_s3_bucket.main.bucket}/*"
+          ]
         }
       ]
     }
@@ -192,7 +218,7 @@ resource "aws_iam_role_policy" "task_msk" {
             "kafka-cluster:AlterClusterDynamicConfiguration",
             "kafka-cluster:WriteDataIdempotently",
           ],
-          "Resource" : "arn:${var.partition}:kafka:${var.region}:${var.account-id}:cluster/${module.msk.cluster_name}/*"
+          "Resource" : "arn:${var.partition}:kafka:${var.region}:${var.account-id}:cluster/*/*"
         },
         {
           "Effect" : "Allow",
@@ -206,7 +232,7 @@ resource "aws_iam_role_policy" "task_msk" {
             "kafka-cluster:WriteData",
             "kafka-cluster:ReadData"
           ],
-          "Resource" : "arn:${var.partition}:kafka:${var.region}:${var.account-id}:topic/${module.msk.cluster_name}/*"
+          "Resource" : "arn:${var.partition}:kafka:${var.region}:${var.account-id}:topic/*/*"
         },
         {
           "Effect" : "Allow",
@@ -215,7 +241,7 @@ resource "aws_iam_role_policy" "task_msk" {
             "kafka-cluster:DeleteGroup",
             "kafka-cluster:DescribeGroup"
           ],
-          "Resource" : "arn:${var.partition}:kafka:${var.region}:${var.account-id}:group/${module.msk.cluster_name}/*"
+          "Resource" : "arn:${var.partition}:kafka:${var.region}:${var.account-id}:group/*/*"
         },
         {
           "Effect" : "Allow",
@@ -223,7 +249,7 @@ resource "aws_iam_role_policy" "task_msk" {
             "kafka-cluster:DescribeTransactionalId",
             "kafka-cluster:AlterTransactionalId",
           ],
-          "Resource" : "arn:${var.partition}:kafka:${var.region}:${var.account-id}:transactional-id/${module.msk.cluster_name}/*"
+          "Resource" : "arn:${var.partition}:kafka:${var.region}:${var.account-id}:transactional-id/*/*"
         }
       ]
     }
@@ -259,7 +285,7 @@ resource "aws_security_group" "ecs" {
 
 resource "aws_ecr_repository" "kafka-connect" {
   name                 = "kafka-connect"
-  image_tag_mutability = "IMMUTABLE"
+  image_tag_mutability = "MUTABLE"
   force_delete         = true
 
   image_scanning_configuration {
@@ -316,7 +342,7 @@ resource "aws_ecs_task_definition" "kafka-connect" {
           },
           {
             "name" : "BROKERS",
-            "value" : module.msk.bootstrap_brokers_sasl_iam,
+            "value" : module.msk-target.bootstrap_brokers_sasl_iam,
           }
         ],
         "mountPoints" : [],
@@ -372,10 +398,33 @@ resource "aws_ecs_service" "kafka-connect" {
   launch_type            = "FARGATE"
   enable_execute_command = true
 }
+resource "aws_appautoscaling_target" "kafka-connect" {
+  max_capacity       = 10
+  min_capacity       = 1
+  resource_id        = split(":", aws_ecs_service.kafka-connect.id)[5]
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+}
+resource "aws_appautoscaling_policy" "kafka-connect-cpu" {
+  name               = "kafka-connect-cpu"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.kafka-connect.resource_id
+  scalable_dimension = aws_appautoscaling_target.kafka-connect.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.kafka-connect.service_namespace
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+    target_value       = 70
+    scale_in_cooldown  = 300
+    scale_out_cooldown = 60
+  }
+}
+
 
 resource "aws_ecr_repository" "prometheus" {
   name                 = "prometheus"
-  image_tag_mutability = "IMMUTABLE"
+  image_tag_mutability = "MUTABLE"
   force_delete         = true
 
   image_scanning_configuration {
@@ -645,8 +694,8 @@ resource "aws_s3_object" "connector-cpc" {
     "clusters" : "msksource,mskdest",
     "source.cluster.alias" : "msksource",
     "target.cluster.alias" : "mskdest",
-    "target.cluster.bootstrap.servers" : "{TARGET CLUSTER BROKERS ADDRESS}",
-    "source.cluster.bootstrap.servers" : "${module.msk.bootstrap_brokers_sasl_iam}",
+    "target.cluster.bootstrap.servers" : "${module.msk-target.bootstrap_brokers_sasl_iam}",
+    "source.cluster.bootstrap.servers" : "${module.msk-source.bootstrap_brokers_sasl_iam}",
     "tasks.max" : "1",
     "key.converter" : " org.apache.kafka.connect.converters.ByteArrayConverter",
     "value.converter" : "org.apache.kafka.connect.converters.ByteArrayConverter",
@@ -674,11 +723,12 @@ resource "aws_s3_object" "connector-hbc" {
     "clusters" : "msksource,mskdest",
     "source.cluster.alias" : "msksource",
     "target.cluster.alias" : "mskdest",
-    "target.cluster.bootstrap.servers" : "{TARGET CLUSTER BROKERS ADDRESS}",
-    "source.cluster.bootstrap.servers" : "${module.msk.bootstrap_brokers_sasl_iam}",
+    "target.cluster.bootstrap.servers" : "${module.msk-target.bootstrap_brokers_sasl_iam}",
+    "source.cluster.bootstrap.servers" : "${module.msk-source.bootstrap_brokers_sasl_iam}",
     "tasks.max" : "1",
     "key.converter" : " org.apache.kafka.connect.converters.ByteArrayConverter",
     "value.converter" : "org.apache.kafka.connect.converters.ByteArrayConverter",
+    "replication.policy.class" : "com.amazonaws.kafka.samples.CustomMM2ReplicationPolicy",
     "replication.factor" : "3",
     "heartbeats.topic.replication.factor" : "3",
     "emit.heartbeats.interval.seconds" : "20",
@@ -701,12 +751,13 @@ resource "aws_s3_object" "connector-msc" {
     "clusters" : "msksource,mskdest",
     "source.cluster.alias" : "msksource",
     "target.cluster.alias" : "mskdest",
-    "target.cluster.bootstrap.servers" : "{TARGET CLUSTER BROKERS ADDRESS}",
-    "source.cluster.bootstrap.servers" : "${module.msk.bootstrap_brokers_sasl_iam}",
-    "topics" : "^ExampleTopic[\\w]*",
-    "tasks.max" : "4",
+    "target.cluster.bootstrap.servers" : "${module.msk-target.bootstrap_brokers_sasl_iam}",
+    "source.cluster.bootstrap.servers" : "${module.msk-source.bootstrap_brokers_sasl_iam}",
+    "topics" : "ExampleTopic",
+    "tasks.max" : "10",
     "key.converter" : " org.apache.kafka.connect.converters.ByteArrayConverter",
     "value.converter" : "org.apache.kafka.connect.converters.ByteArrayConverter",
+    "replication.policy.class" : "com.amazonaws.kafka.samples.CustomMM2ReplicationPolicy",
     "replication.factor" : "3",
     "offset-syncs.topic.replication.factor" : "3",
     "sync.topic.acls.interval.seconds" : "20",
@@ -747,27 +798,28 @@ resource "aws_s3_object" "worker" {
   bucket  = aws_s3_bucket.main.bucket
   key     = "worker/connect-distributed.properties"
   content = <<EOF
-bootstrap.servers=${module.msk.bootstrap_brokers_sasl_iam}
-group.id=mm2-worker
-key.converter=org.apache.kafka.connect.json.JsonConverter
-value.converter=org.apache.kafka.connect.json.JsonConverter
-key.converter.schemas.enable=true
-value.converter.schemas.enable=true
-offset.storage.topic=connect-offsets-mm2-worker
-offset.storage.replication.factor=3
-config.storage.topic=connect-configs-mm2-worker
-config.storage.replication.factor=3
-status.storage.topic=connect-status-mm2-worker
-status.storage.replication.factor=3
-offset.flush.interval.ms=10000
-connector.client.config.override.policy=All
-security.protocol=SASL_SSL
-sasl.mechanism = AWS_MSK_IAM
-sasl.jaas.config = software.amazon.msk.auth.iam.IAMLoginModule required;
-sasl.client.callback.handler.class = software.amazon.msk.auth.iam.IAMClientCallbackHandler
-producer.security.protocol=SASL_SSL
-producer.sasl.mechanism = AWS_MSK_IAM
-producer.sasl.jaas.config = software.amazon.msk.auth.iam.IAMLoginModule required;
-producer.sasl.client.callback.handler.class = software.amazon.msk.auth.iam.IAMClientCallbackHandler
-EOF
+    bootstrap.servers=${module.msk-target.bootstrap_brokers_sasl_iam}
+    group.id=mm2-worker
+    key.converter=org.apache.kafka.connect.json.JsonConverter
+    value.converter=org.apache.kafka.connect.json.JsonConverter
+    key.converter.schemas.enable=true
+    value.converter.schemas.enable=true
+    offset.storage.topic=connect-offsets-mm2-worker
+    offset.storage.replication.factor=3
+    config.storage.topic=connect-configs-mm2-worker
+    config.storage.replication.factor=3
+    status.storage.topic=connect-status-mm2-worker
+    status.storage.replication.factor=3
+    offset.flush.interval.ms=10000
+    connector.client.config.override.policy=All
+    security.protocol=SASL_SSL
+    sasl.mechanism = AWS_MSK_IAM
+    sasl.jaas.config = software.amazon.msk.auth.iam.IAMLoginModule required;
+    sasl.client.callback.handler.class = software.amazon.msk.auth.iam.IAMClientCallbackHandler
+    producer.security.protocol=SASL_SSL
+    producer.sasl.mechanism = AWS_MSK_IAM
+    producer.sasl.jaas.config = software.amazon.msk.auth.iam.IAMLoginModule required;
+    producer.sasl.client.callback.handler.class = software.amazon.msk.auth.iam.IAMClientCallbackHandler
+    EOF
 }
+

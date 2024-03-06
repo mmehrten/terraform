@@ -31,6 +31,10 @@ data "aws_subnets" "main" {
     values = [false]
   }
 }
+data "aws_subnet" "main" {
+  for_each = { for o in data.aws_subnets.main.ids : o => o }
+  id       = each.value
+}
 
 resource "aws_kms_key" "main" {
   description             = "rds KMS key."
@@ -65,7 +69,7 @@ resource "aws_rds_cluster" "main" {
   cluster_identifier                  = replace("${var.base-name}.rds.${var.database-name}", ".", "-")
   engine                              = "aurora-postgresql"
   engine_version                      = "15"
-  availability_zones                  = ["${var.region}a", "${var.region}b", "${var.region}c"]
+  availability_zones                  = [for k, v in data.aws_subnet.main : v.availability_zone]
   database_name                       = "dev"
   master_username                     = "dev"
   master_password                     = var.master-password
@@ -80,7 +84,7 @@ resource "aws_rds_cluster" "main" {
 }
 
 resource "aws_rds_cluster_instance" "main" {
-  count                           = 2
+  count                           = var.instance-count
   identifier                      = "${replace("${var.base-name}.rds.${var.database-name}", ".", "-")}-${count.index}"
   cluster_identifier              = aws_rds_cluster.main.id
   instance_class                  = "db.t4g.medium"
