@@ -134,12 +134,9 @@ module "rds" {
 resource "aws_mskconnect_worker_configuration" "main" {
   name                    = replace(local.base-name, ".", "-")
   properties_file_content = <<EOT
-    key.converter=org.apache.kafka.connect.storage.StringConverter
-    value.converter=org.apache.kafka.connect.storage.StringConverter
-  EOT
-  # config.providers.secretManager.class=com.github.jcustenborder.kafka.config.aws.SecretsManagerConfigProvider
-  # config.providers=secretManager
-  # config.providers.secretManager.param.aws.region=${var.region}
+key.converter=org.apache.kafka.connect.storage.StringConverter
+value.converter=org.apache.kafka.connect.storage.StringConverter
+EOT
 }
 
 resource "aws_s3_object" "main" {
@@ -175,16 +172,37 @@ resource "aws_security_group" "main" {
     cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
   }
+  egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
   tags = {
     Name = "${local.base-name}.sg.msk-connect"
   }
 }
 
-resource "aws_iam_role_policy" "main" {
+resource "aws_iam_role" "main" {
   name = "${var.app-shorthand-name}.iam.role.msk.admin"
-  role = aws_iam_role.main.id
-  policy = jsonencode(
+  assume_role_policy = jsonencode(
     {
+      "Version" : "2012-10-17",
+      "Statement" : [
+        {
+          "Action" : "sts:AssumeRole",
+          "Principal" : {
+            "Service" : ["lambda.amazonaws.com", "kafkaconnect.amazonaws.com"]
+          },
+          "Effect" : "Allow"
+        }
+      ]
+    }
+  )
+  inline_policy {
+    name = "AllowMSK"
+    policy = jsonencode({
       "Version" : "2012-10-17",
       "Statement" : [
         {
@@ -247,26 +265,8 @@ resource "aws_iam_role_policy" "main" {
           ]
         }
       ]
-    }
-  )
-}
-
-resource "aws_iam_role" "main" {
-  name = "${var.app-shorthand-name}.iam.role.msk.admin"
-  assume_role_policy = jsonencode(
-    {
-      "Version" : "2012-10-17",
-      "Statement" : [
-        {
-          "Action" : "sts:AssumeRole",
-          "Principal" : {
-            "Service" : ["lambda.amazonaws.com", "kafkaconnect.amazonaws.com"]
-          },
-          "Effect" : "Allow"
-        }
-      ]
-    }
-  )
+    })
+  }
 }
 
 resource "aws_mskconnect_connector" "main" {
@@ -336,4 +336,3 @@ resource "aws_mskconnect_connector" "main" {
     revision = aws_mskconnect_worker_configuration.main.latest_revision
   }
 }
-

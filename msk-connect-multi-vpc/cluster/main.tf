@@ -104,31 +104,72 @@ resource "aws_msk_cluster_policy" "main" {
     "Version" : "2012-10-17",
     "Statement" : [
       {
+        "Sid" : "AllowManageEndpoint",
         "Effect" : "Allow",
-        "Principal" : {
-          "AWS" : [
-            "${var.shared-account-id}", "${var.account-id}"
-          ]
-        },
+        "Principal" : { "AWS" : ["${var.shared-account-id}", "${var.account-id}"] },
         "Action" : [
           "kafka:CreateVpcConnection",
           "kafka:GetBootstrapBrokers",
           "kafka:DescribeCluster",
           "kafka:DescribeClusterV2",
+        ],
+        "Resource" : [module.msk.cluster_arn]
+      },
+      {
+        "Sid" : "AllowConnect",
+        "Effect" : "Allow",
+        "Principal" : { "AWS" : ["arn:aws:iam::100781753907:role/spoke-zwy2.iam.role.msk.admin", "${var.account-id}"] },
+        "Action" : [
           "kafka-cluster:Connect",
-          "kafka-cluster:DescribeCluster",
+          "kafka-cluster:DescribeCluster"
+        ],
+        "Resource" : [module.msk.cluster_arn]
+      },
+      {
+        "Sid" : "AllowTopicRead",
+        "Effect" : "Allow",
+        "Principal" : { "AWS" : ["arn:aws:iam::100781753907:role/spoke-zwy2.iam.role.msk.admin", "${var.account-id}"] },
+        "Action" : [
           "kafka-cluster:ReadData",
           "kafka-cluster:DescribeTopic",
+          "kafka-cluster:AlterTopicDynamicConfiguration",
+        ],
+        "Resource" : ["arn:${var.partition}:kafka:${var.region}:${var.account-id}:topic/${module.msk.cluster_name}/*"]
+      },
+      {
+        "Sid" : "AllowTopiWrite",
+        "Effect" : "Allow",
+        "Principal" : { "AWS" : ["*"] },
+        "Action" : [
           "kafka-cluster:WriteData",
           "kafka-cluster:CreateTopic",
+          "kafka-cluster:AlterTopic",
+          "kafka-cluster:DeleteTopic",
+          "kafka-cluster:AlterTopicDynamicConfiguration",
+        ],
+        "Resource" : ["arn:${var.partition}:kafka:${var.region}:${var.account-id}:topic/${module.msk.cluster_name}/*"],
+        "Condition" : { "ArnLike" : { "aws:PrincipalArn" : ["arn:aws:iam::100781753907:role/spoke-zwy2.iam.role.msk.admin"] } }
+      },
+      {
+        "Sid" : "AllowManageGroups",
+        "Effect" : "Allow",
+        "Principal" : { "AWS" : ["arn:aws:iam::100781753907:role/spoke-zwy2.iam.role.msk.admin", "${var.account-id}"] },
+        "Action" : [
           "kafka-cluster:AlterGroup",
+          "kafka-cluster:DeleteGroup",
           "kafka-cluster:DescribeGroup"
         ],
-        "Resource" : [
-          module.msk.cluster_arn,
-          "arn:${var.partition}:kafka:${var.region}:${var.account-id}:topic/${module.msk.cluster_name}/*",
-          "arn:${var.partition}:kafka:${var.region}:${var.account-id}:group/${module.msk.cluster_name}/*"
-        ]
+        "Resource" : ["arn:${var.partition}:kafka:${var.region}:${var.account-id}:group/${module.msk.cluster_name}/*"]
+      },
+      {
+        "Sid" : "AllowManageTransactions",
+        "Effect" : "Allow",
+        "Principal" : { "AWS" : ["arn:aws:iam::100781753907:role/spoke-zwy2.iam.role.msk.admin", "${var.account-id}"] },
+        "Action" : [
+          "kafka-cluster:DescribeTransactionalId",
+          "kafka-cluster:AlterTransactionalId",
+        ],
+        "Resource" : "arn:${var.partition}:kafka:${var.region}:${var.account-id}:transactional-id/${module.msk.cluster_name}/*"
       }
     ]
   })
@@ -137,7 +178,7 @@ resource "aws_msk_cluster_policy" "main" {
 resource "aws_lb_target_group" "main" {
   for_each    = { for o in module.msk.broker_nodes : o.broker_id => o }
   name        = "msk-${each.value.broker_id}"
-  port        = 9098
+  port        = "9098"
   protocol    = "TCP"
   target_type = "ip"
   vpc_id      = module.vpc.outputs.vpc-id
@@ -147,7 +188,7 @@ resource "aws_lb_target_group_attachment" "main" {
   for_each         = { for o in module.msk.broker_nodes : o.broker_id => o }
   target_group_arn = aws_lb_target_group.main[each.key].arn
   target_id        = each.value.client_vpc_ip_address
-  port             = 9098
+  port             = "9098"
 }
 
 resource "aws_lb" "main" {
@@ -160,10 +201,22 @@ resource "aws_lb" "main" {
   enable_deletion_protection = false
 }
 
-resource "aws_lb_listener" "main" {
+resource "aws_lb_listener" "main-9098" {
   for_each          = { for o in module.msk.broker_nodes : o.broker_id => o }
   load_balancer_arn = aws_lb.main[each.key].arn
   port              = "9098"
+  protocol          = "TCP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.main[each.key].arn
+  }
+}
+
+resource "aws_lb_listener" "main-900X" {
+  for_each          = { for o in module.msk.broker_nodes : o.broker_id => o }
+  load_balancer_arn = aws_lb.main[each.key].arn
+  port              = "900${each.key}"
   protocol          = "TCP"
 
   default_action {
