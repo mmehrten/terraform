@@ -107,12 +107,18 @@ def create_east_west_tls_principals():
     )
 
 def update_advertised_listeners():
+    bs = ",".join((
+        "b-1.mskctzwy2useast1mskcl.j0gvut.c19.kafka.us-east-1.amazonaws.com:9001",
+        "b-2.mskctzwy2useast1mskcl.j0gvut.c19.kafka.us-east-1.amazonaws.com:9002",
+        "b-3.mskctzwy2useast1mskcl.j0gvut.c19.kafka.us-east-1.amazonaws.com:9003"
+    ))
     admin = KafkaAdminClient(
-        bootstrap_servers="b-1.mskctzwy2useast1mskcl.j0gvut.c19.kafka.us-east-1.amazonaws.com:9098,b-2.mskctzwy2useast1mskcl.j0gvut.c19.kafka.us-east-1.amazonaws.com:9098,b-3.mskctzwy2useast1mskcl.j0gvut.c19.kafka.us-east-1.amazonaws.com:9098",
+        bootstrap_servers=bs,
         security_protocol="SASL_SSL",
         sasl_mechanism="OAUTHBEARER",
         sasl_oauth_token_provider=MSKTokenProvider(os.environ['AWS_REGION']),
         request_timeout_ms=1000,
+        ssl_check_hostname=False
     )
     for i in admin.describe_configs(
             [
@@ -140,7 +146,7 @@ def update_advertised_listeners():
              f"CLIENT_SECURE_VPCE://b-{broker_id}.tls.mskctzwy2useast1mskcl.j0gvut.c19.kafka.us-east-1.amazonaws.com:14001",
              f"REPLICATION://b-{broker_id}-internal.mskctzwy2useast1mskcl.j0gvut.c19.kafka.us-east-1.amazonaws.com:9093",
              f"REPLICATION_SECURE://b-{broker_id}-internal.mskctzwy2useast1mskcl.j0gvut.c19.kafka.us-east-1.amazonaws.com:9095"
-        )) 
+        ))
         res = ConfigResource(
             ConfigResourceType.BROKER, 
             broker_id, 
@@ -148,5 +154,3 @@ def update_advertised_listeners():
         )
         resp = admin.alter_configs([res])
         print(resp)
-
- 
