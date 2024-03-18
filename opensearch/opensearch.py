@@ -67,7 +67,7 @@ def create_role_mapping(client, event):
 
 
 def misc(event):
-    r = requests.put('https://' + event.get("endpoint", host) + event["path"], auth=auth, json=event["body"], headers=headers)
+    r = requests.request(event["method"], 'https://' + event.get("endpoint", host) + event["path"], auth=auth, json=event["body"], headers=headers)
     print(r.text)
     r.raise_for_status()
     return r.json()

@@ -16,3 +16,7 @@ variable "tags" {
   type        = map(string)
   description = "Tags to apply to all resources."
 }
+variable "remote-region" {
+  type        = string
+  description = "Remote region to connect to."
+}
