@@ -7,6 +7,7 @@ from kafka.admin import (
     ResourcePattern,
     ResourceType,
 )
+from kafka.admin import KafkaAdminClient, ConfigResourceType, ConfigResource
 
 from token_provider import MSKTokenProvider
 
@@ -104,3 +105,48 @@ def create_east_west_tls_principals():
         "User:CN=msk-zwy2.us-gov-west-1.client",
         "us-gov-west-1",
     )
+
+def update_advertised_listeners():
+    admin = KafkaAdminClient(
+        bootstrap_servers="b-1.mskctzwy2useast1mskcl.j0gvut.c19.kafka.us-east-1.amazonaws.com:9098,b-2.mskctzwy2useast1mskcl.j0gvut.c19.kafka.us-east-1.amazonaws.com:9098,b-3.mskctzwy2useast1mskcl.j0gvut.c19.kafka.us-east-1.amazonaws.com:9098",
+        security_protocol="SASL_SSL",
+        sasl_mechanism="OAUTHBEARER",
+        sasl_oauth_token_provider=MSKTokenProvider(os.environ['AWS_REGION']),
+        request_timeout_ms=1000,
+    )
+    for i in admin.describe_configs(
+            [
+                ConfigResource(ConfigResourceType.BROKER, 1),
+                ConfigResource(ConfigResourceType.BROKER, 2),
+                ConfigResource(ConfigResourceType.BROKER, 3)
+            ]
+    ):
+        print(str(i.__dict__)[0:200])
+        for j in i.resources:
+            for k in j:
+                if isinstance(k, list):
+                    for l in k: 
+                        print(l)
+                else:
+                    print(k)
+    for broker_id in [1, 2, 3]:
+        port = f"900{broker_id}"
+        listeners = ",".join((
+             f"CLIENT_SASL_SCRAM://b-{broker_id}.mskctzwy2useast1mskcl.j0gvut.c19.kafka.us-east-1.amazonaws.com:9096",
+             f"CLIENT_SASL_SCRAM_VPCE://b-{broker_id}.scram.mskctzwy2useast1mskcl.j0gvut.c19.kafka.us-east-1.amazonaws.com:14001",
+             f"CLIENT_IAM://b-{broker_id}.mskctzwy2useast1mskcl.j0gvut.c19.kafka.us-east-1.amazonaws.com:{port}",
+             f"CLIENT_IAM_VPCE://b-{broker_id}.iam.mskctzwy2useast1mskcl.j0gvut.c19.kafka.us-east-1.amazonaws.com:14001",
+             f"CLIENT_SECURE://b-{broker_id}.mskctzwy2useast1mskcl.j0gvut.c19.kafka.us-east-1.amazonaws.com:9094",
+             f"CLIENT_SECURE_VPCE://b-{broker_id}.tls.mskctzwy2useast1mskcl.j0gvut.c19.kafka.us-east-1.amazonaws.com:14001",
+             f"REPLICATION://b-{broker_id}-internal.mskctzwy2useast1mskcl.j0gvut.c19.kafka.us-east-1.amazonaws.com:9093",
+             f"REPLICATION_SECURE://b-{broker_id}-internal.mskctzwy2useast1mskcl.j0gvut.c19.kafka.us-east-1.amazonaws.com:9095"
+        )) 
+        res = ConfigResource(
+            ConfigResourceType.BROKER, 
+            broker_id, 
+            {"advertised.listeners":listeners}
+        )
+        resp = admin.alter_configs([res])
+        print(resp)
+
+ 
