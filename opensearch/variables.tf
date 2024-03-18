@@ -16,10 +16,18 @@ variable "opensearch-master-password" {
   default     = null
 }
 variable "vpc-id" {
+  type = string
+}
+variable "remote-vpc-id" {
   type    = string
-  default = true
+  default = ""
 }
 variable "cluster-id" {
   default = "demo"
   type    = string
+}
+variable "use-cross-region" {
+  default     = false
+  type        = bool
+  description = "Whether or not to create a cross-region cluster"
 }

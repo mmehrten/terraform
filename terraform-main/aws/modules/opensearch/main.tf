@@ -71,7 +71,7 @@ data "aws_iam_policy_document" "main" {
 
 resource "aws_iam_role" "main" {
   count              = var.master-password == null ? 1 : 0
-  name               = "${var.app-shorthand-name}.iam.role.opensearch-admin"
+  name               = "${var.base-name}.iam.role.opensearch-admin"
   assume_role_policy = <<EOF
 {
  "Version": "2012-10-17",
@@ -92,7 +92,7 @@ EOF
 
 resource "aws_iam_role_policy" "main" {
   count  = var.master-password == null ? 1 : 0
-  name   = "${var.app-shorthand-name}.iam.role.opensearch-admin"
+  name   = "${var.base-name}.iam.policy.opensearch-admin"
   role   = aws_iam_role.main[0].id
   policy = <<EOF
 {
@@ -110,14 +110,14 @@ EOF
 
 resource "aws_opensearch_domain" "main" {
   domain_name    = var.domain-name
-  engine_version = "OpenSearch_2.9"
+  engine_version = var.domain-version
 
   cluster_config {
-    instance_type  = "m4.large.search" # "t3.medium.search"
+    instance_type  = "m5.large.search" # "t3.medium.search"
     instance_count = 3
 
     dedicated_master_enabled = true
-    dedicated_master_type    = "m4.large.search"
+    dedicated_master_type    = "m5.large.search"
     dedicated_master_count   = 3
 
     warm_enabled = true
@@ -161,6 +161,7 @@ resource "aws_opensearch_domain" "main" {
     "rest.action.multi.allow_explicit_index" = "true"
     "indices.fielddata.cache.size"           = "20"
     "indices.query.bool.max_clause_count"    = "1024"
+    "override_main_response_version"         = "true"
   }
 
   domain_endpoint_options {
@@ -257,4 +258,7 @@ output "iam_role_id" {
 }
 output "endpoint" {
   value = aws_opensearch_domain.main.endpoint
+}
+output "domain_name" {
+  value = aws_opensearch_domain.main.domain_name
 }

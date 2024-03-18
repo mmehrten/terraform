@@ -2,7 +2,8 @@
 *   Create an OpenSearch cluster and assocaited infrastructure.
 */
 locals {
-  base-name = "${var.app-shorthand-name}.${var.region}"
+  base-name        = "${var.app-shorthand-name}.${var.region}"
+  remote-base-name = "${var.app-shorthand-name}.${var.remote-region}"
 }
 
 
@@ -18,6 +19,24 @@ module "opensearch" {
 
   vpc-id          = var.vpc-id
   domain-name     = replace("${local.base-name}.${var.cluster-id}", ".", "-")
+  master-password = var.opensearch-master-password
+  source          = "../terraform-main/aws/modules/opensearch"
+}
+
+module "opensearch-remote" {
+  count              = var.use-cross-region ? 1 : 0
+  providers          = { aws = aws.remote }
+  region             = var.remote-region
+  account-id         = var.account-id
+  app-shorthand-name = var.app-shorthand-name
+  app-name           = var.app-name
+  terraform-role     = var.terraform-role
+  tags               = var.tags
+  base-name          = local.remote-base-name
+  partition          = var.partition
+
+  vpc-id          = var.remote-vpc-id
+  domain-name     = replace("${local.remote-base-name}.${var.cluster-id}", ".", "-")
   master-password = var.opensearch-master-password
   source          = "../terraform-main/aws/modules/opensearch"
 }
@@ -106,63 +125,6 @@ module "os-configure-lambda" {
   source  = "../terraform-main/aws/modules/lambda"
   timeout = 300
 }
-
-# module "os-write-lambda" {
-#   region             = var.region
-#   account-id         = var.account-id
-#   app-shorthand-name = var.app-shorthand-name
-#   app-name           = var.app-name
-#   terraform-role     = var.terraform-role
-#   tags               = var.tags
-#   base-name          = local.base-name
-#   partition          = var.partition
-
-#   name = "opensearch-writer-${var.cluster-id}"
-#   policy = jsonencode(
-#     {
-#       "Version" : "2012-10-17",
-#       "Statement" : [
-#         {
-#           "Effect" : "Allow",
-#           "Action" : "es:*",
-#           "Resource" : "${module.opensearch.arn}"
-#         }
-#       ]
-#   })
-#   file-path  = "./writer.py"
-#   handler    = "writer.handler"
-#   runtime    = "python3.9"
-#   vpc-id     = var.vpc-id
-#   subnet-ids = data.aws_subnets.main.ids
-#   layer_arns = [
-#     "arn:aws-us-gov:lambda:us-gov-west-1:053633994311:layer:opensearch-py:3"
-#   ]
-#   environment = {
-#     OPENSEARCH_ENDPOINT = module.opensearch.endpoint
-#   }
-#   source  = "../terraform-main/aws/modules/lambda"
-#   timeout = 300
-# }
-
-# resource "aws_cloudwatch_event_rule" "main" {
-#   name                = "opensearch-writer"
-#   schedule_expression = "rate(1 minute)"
-# }
-
-# resource "aws_cloudwatch_event_target" "main" {
-#   rule      = aws_cloudwatch_event_rule.main.name
-#   target_id = aws_cloudwatch_event_rule.main.name
-#   arn       = module.os-write-lambda.lambda_arn
-# }
-
-# resource "aws_lambda_permission" "main" {
-#   statement_id  = "AllowExecutionFromEventBridge"
-#   action        = "lambda:InvokeFunction"
-#   function_name = module.os-write-lambda.lambda_arn
-#   principal     = "events.amazonaws.com"
-#   source_arn    = aws_cloudwatch_event_rule.main.arn
-# }
-
 
 module "s3-data" {
   region             = var.region
@@ -269,3 +231,25 @@ resource "aws_iam_role_policy" "admin-snap" {
   )
 }
 
+resource "aws_opensearch_outbound_connection" "main" {
+  count            = var.use-cross-region ? 1 : 0
+  connection_alias = "outbound_connection"
+  connection_mode  = "DIRECT"
+  local_domain_info {
+    owner_id    = var.account-id
+    region      = var.region
+    domain_name = module.opensearch.domain_name
+  }
+
+  remote_domain_info {
+    owner_id    = var.account-id
+    region      = var.remote-region
+    domain_name = module.opensearch-remote[0].domain_name
+  }
+}
+
+resource "aws_opensearch_inbound_connection_accepter" "main" {
+  provider      = aws.remote
+  count         = var.use-cross-region ? 1 : 0
+  connection_id = aws_opensearch_outbound_connection.main[0].id
+}

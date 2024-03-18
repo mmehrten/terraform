@@ -1,0 +1,28 @@
+apiVersion: v1alpha1
+sts-region: us-west-1
+static:
+  - namespace: AWS/DX
+    name: DX Connection
+    regions:
+      - us-west-1
+    metrics:
+      - name: ConnectionState
+        statistics: [Average, Maximum, Minimum]
+        period: 60
+        length: 300
+      - name: VirtualInterfaceBpsEgress
+        statistics: [Average, Maximum, Minimum]
+        period: 60
+        length: 300
+      - name: VirtualInterfaceBpsIngress
+        statistics: [Average, Maximum, Minimum]
+        period: 60
+        length: 300
+      - name: VirtualInterfacePpsEgress
+        statistics: [Average, Maximum, Minimum]
+        period: 60
+        length: 300
+      - name: VirtualInterfacePpsIngress
+        statistics: [Average, Maximum, Minimum]
+        period: 60
+        length: 300

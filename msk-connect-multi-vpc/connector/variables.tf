@@ -39,7 +39,7 @@ variable "cluster-name" {
   description = "Cluster name"
 }
 variable "broker-endpoint-service-map" {
-  type        = map(string)
+  type        = map(map(string))
   description = "Mapping of AZ to the VPC endpoint service info for the AZ"
 }
 variable "broker-dns" {
