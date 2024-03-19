@@ -1,6 +1,7 @@
 variable "policy" {
   description = "The IAM role policy block for the execution role."
   type        = string
+  default = null
 }
 
 variable "name" {
