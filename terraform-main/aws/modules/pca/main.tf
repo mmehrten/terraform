@@ -37,13 +37,17 @@ resource "aws_acmpca_certificate" "main" {
 }
 
 output "certificate" {
-  value = aws_acmpca_certificate_authority_certificate.main.certificate
+  value = aws_acmpca_certificate.main.certificate
 }
 
 output "certificate_authority_arn" {
-  value = aws_acmpca_certificate_authority_certificate.main.certificate_authority_arn
+  value = aws_acmpca_certificate.main.certificate_authority_arn
 }
 
 output "certificate_chain" {
-  value = aws_acmpca_certificate_authority_certificate.main.certificate_chain
+  value = aws_acmpca_certificate.main.certificate_chain
+}
+
+output "common_name" {
+  value = aws_acmpca_certificate_authority.main.certificate_authority_configuration[0].subject[0].common_name
 }

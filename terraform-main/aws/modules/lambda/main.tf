@@ -3,6 +3,7 @@
 */
 
 resource "aws_iam_role_policy" "main" {
+  count  = var.policy == null ? 0 : 1
   name   = "${var.app-shorthand-name}.iam.role.lambda.${var.name}"
   role   = aws_iam_role.main.id
   policy = var.policy
