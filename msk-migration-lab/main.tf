@@ -1,5 +1,5 @@
 /*
-*   Create an MSK cluster with Redshift cluster, and streaming ingestion with Avro and Glue Schema Registry using a NAT gateway or a Lambda function.
+*   Create an MSK clusters with replication enabled by MirrorMaker2 running on Kafka Connect in ECS.
 */
 locals {
   base-name = "${var.app-shorthand-name}.${var.region}"

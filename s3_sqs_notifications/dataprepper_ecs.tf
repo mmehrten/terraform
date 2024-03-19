@@ -1,3 +1,7 @@
+/*
+*   Create a DataPrepper ECS service to consume logs from S3 event notifications in SQS.
+*/
+
 data "aws_caller_identity" "current" {}
 
 data "aws_subnets" "public" {

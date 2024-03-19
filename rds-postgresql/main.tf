@@ -1,5 +1,5 @@
 /*
-*   Create an OpenSearch cluster and assocaited infrastructure.
+*   Create an RDS database with AWS Backup configured.
 */
 locals {
   base-name = "${var.app-shorthand-name}.${var.region}"

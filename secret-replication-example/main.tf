@@ -1,3 +1,6 @@
+/*
+*   Demo creating and destroying SecretsManager secrets with cross-region replication.
+*/
 locals {
   base-name    = "${var.app-shorthand-name}.${var.region}"
   replica-name = "${var.app-shorthand-name}.${var.replica-region}"

@@ -1,5 +1,5 @@
 /*
-*   Create an MSK cluster with Redshift cluster, and streaming ingestion with Avro and Glue Schema Registry using a NAT gateway or a Lambda function.
+*   Demo using MSK Connect with Debezium to replicate RDS data into MSK Serverless topics.
 */
 locals {
   base-name = "${var.app-shorthand-name}.${var.region}"

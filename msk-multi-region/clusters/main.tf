@@ -1,5 +1,5 @@
 /*
-*   Create an MSK cluster with Redshift cluster, and streaming ingestion with Avro and Glue Schema Registry using a NAT gateway or a Lambda function.
+*   Create an MSK cluster to be accessed across regions via VPC peering or transit gateways using mTLS auth.
 */
 locals {
   base-name = "${var.app-shorthand-name}.${var.region}"
