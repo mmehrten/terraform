@@ -4,14 +4,14 @@ Create a basic Lambda function and IAM role.
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 4.44.0 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.29.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
 | <a name="provider_archive"></a> [archive](#provider\_archive) | n/a |
-| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 4.44.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.29.0 |
 
 ## Modules
 
@@ -59,5 +59,6 @@ No modules.
 | Name | Description |
 |------|-------------|
 | <a name="output_iam_arn"></a> [iam\_arn](#output\_iam\_arn) | n/a |
+| <a name="output_iam_role_id"></a> [iam\_role\_id](#output\_iam\_role\_id) | n/a |
 | <a name="output_lambda_arn"></a> [lambda\_arn](#output\_lambda\_arn) | n/a |
 | <a name="output_lambda_name"></a> [lambda\_name](#output\_lambda\_name) | n/a |

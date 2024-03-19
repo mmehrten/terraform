@@ -4,13 +4,13 @@ Create a private S3 bucket with a dedicated KMS key.
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 4.44.0 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.29.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 4.44.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.29.0 |
 
 ## Modules
 
@@ -44,6 +44,7 @@ No modules.
 | <a name="input_region"></a> [region](#input\_region) | The region to create resources in. | `string` | n/a | yes |
 | <a name="input_tags"></a> [tags](#input\_tags) | Tags to apply to all resources. | `map(string)` | n/a | yes |
 | <a name="input_terraform-role"></a> [terraform-role](#input\_terraform-role) | The role for Terraform to use, which dictates the account resources are created in. | `string` | n/a | yes |
+| <a name="input_use-cmk"></a> [use-cmk](#input\_use-cmk) | Whether or not to use a CMK for encryption vs. SSE-S3. | `bool` | `true` | no |
 | <a name="input_versioning"></a> [versioning](#input\_versioning) | Whether or not to enable bucket versioning. | `bool` | `false` | no |
 
 ## Outputs
