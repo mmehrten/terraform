@@ -14,13 +14,13 @@ No providers.
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_internet-gateway"></a> [internet-gateway](#module\_internet-gateway) | ../../modules/internet-gateway | n/a |
-| <a name="module_organization-root"></a> [organization-root](#module\_organization-root) | ../../modules/organization-root | n/a |
-| <a name="module_s3-logs"></a> [s3-logs](#module\_s3-logs) | ../../modules/s3 | n/a |
-| <a name="module_terraform"></a> [terraform](#module\_terraform) | ../../modules/terraform-infra | n/a |
-| <a name="module_transit-gateway"></a> [transit-gateway](#module\_transit-gateway) | ../../modules/transit-gateway | n/a |
-| <a name="module_vpc"></a> [vpc](#module\_vpc) | ../../modules/vpc | n/a |
-| <a name="module_vpc-endpoints"></a> [vpc-endpoints](#module\_vpc-endpoints) | ../../modules/vpc-endpoints | n/a |
+| <a name="module_internet-gateway"></a> [internet-gateway](#module\_internet-gateway) | ../../terraform-main/aws/modules/internet-gateway | n/a |
+| <a name="module_organization-root"></a> [organization-root](#module\_organization-root) | ../../terraform-main/aws/modules/organization-root | n/a |
+| <a name="module_s3-logs"></a> [s3-logs](#module\_s3-logs) | ../../terraform-main/aws/modules/s3 | n/a |
+| <a name="module_terraform"></a> [terraform](#module\_terraform) | ../../terraform-main/aws/modules/terraform-infra | n/a |
+| <a name="module_transit-gateway"></a> [transit-gateway](#module\_transit-gateway) | ../../terraform-main/aws/modules/transit-gateway | n/a |
+| <a name="module_vpc"></a> [vpc](#module\_vpc) | ../../terraform-main/aws/modules/vpc | n/a |
+| <a name="module_vpc-endpoints"></a> [vpc-endpoints](#module\_vpc-endpoints) | ../../terraform-main/aws/modules/vpc-endpoints | n/a |
 
 ## Resources
 
@@ -44,4 +44,6 @@ No resources.
 
 ## Outputs
 
-No outputs.
+| Name | Description |
+|------|-------------|
+| <a name="output_results"></a> [results](#output\_results) | n/a |
