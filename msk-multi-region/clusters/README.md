@@ -1,4 +1,4 @@
-  Create an MSK cluster with Redshift cluster, and streaming ingestion with Avro and Glue Schema Registry using a NAT gateway or a Lambda function.
+  Create an MSK cluster to be accessed across regions via VPC peering or transit gateways using mTLS auth.
 
 ## Requirements
 
@@ -8,9 +8,7 @@
 
 ## Providers
 
-| Name | Version |
-|------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 5.32.1 |
+No providers.
 
 ## Modules
 
@@ -25,9 +23,7 @@
 
 ## Resources
 
-| Name | Type |
-|------|------|
-| [aws_subnet.selected](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/subnet) | data source |
+No resources.
 
 ## Inputs
 
@@ -47,8 +43,4 @@
 
 ## Outputs
 
-| Name | Description |
-|------|-------------|
-| <a name="output_broker_nodes"></a> [broker\_nodes](#output\_broker\_nodes) | n/a |
-| <a name="output_broker_zone"></a> [broker\_zone](#output\_broker\_zone) | n/a |
-| <a name="output_vpc_id"></a> [vpc\_id](#output\_vpc\_id) | n/a |
+No outputs.

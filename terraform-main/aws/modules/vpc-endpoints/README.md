@@ -4,13 +4,13 @@
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 4.44.0 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.29.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 4.44.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.29.0 |
 
 ## Modules
 
@@ -52,4 +52,5 @@ No modules.
 
 | Name | Description |
 |------|-------------|
+| <a name="output_endpoint_ips"></a> [endpoint\_ips](#output\_endpoint\_ips) | n/a |
 | <a name="output_outputs"></a> [outputs](#output\_outputs) | n/a |
