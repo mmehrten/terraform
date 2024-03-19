@@ -1,5 +1,5 @@
 /*
-*   Create an OpenSearch cluster and assocaited infrastructure.
+*   Create some mock data to use with Glue Anomaly Detection.
 */
 locals {
   base-name = "${var.app-shorthand-name}.${var.region}"
