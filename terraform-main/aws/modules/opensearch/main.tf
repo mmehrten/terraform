@@ -17,6 +17,7 @@ resource "aws_kms_alias" "alias" {
 }
 
 resource "aws_security_group" "main" {
+  count       = var.vpc-id == null ? 0 : 1
   name        = "${var.base-name}.sg.opensearch"
   description = "Security group for OpenSearch clusters."
   vpc_id      = var.vpc-id
@@ -47,7 +48,7 @@ resource "aws_security_group" "main" {
 data "aws_subnets" "main" {
   filter {
     name   = "vpc-id"
-    values = [var.vpc-id]
+    values = var.vpc-id == null ? [] : [var.vpc-id]
   }
   filter {
     name   = "map-public-ip-on-launch"
@@ -107,6 +108,43 @@ resource "aws_iam_role_policy" "main" {
 }
 EOF
 }
+resource "aws_iam_role_policy" "ec2" {
+  count = var.master-password == null ? 1 : 0
+  name  = "${var.base-name}.iam.policy.opensearch-admin.ec2"
+  role  = aws_iam_role.main[0].id
+  policy = jsonencode(
+    {
+      "Version" : "2012-10-17",
+      "Statement" : [
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "ec2:DescribeNetworkInterfaces",
+            "ec2:CreateNetworkInterface",
+            "ec2:DeleteNetworkInterface",
+            "ec2:DescribeInstances",
+            "ec2:AttachNetworkInterface",
+            "ec2:DescribeSecurityGroups",
+            "ec2:DescribeSubnets",
+            "ec2:DescribeVpcs"
+          ],
+          "Resource" : "*"
+        },
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "logs:CreateLogGroup",
+            "logs:CreateLogStream",
+            "logs:PutLogEvents",
+            "cloudwatch:*"
+          ],
+          "Resource" : "*"
+        }
+
+      ]
+  })
+}
+
 
 resource "aws_opensearch_domain" "main" {
   domain_name    = var.domain-name
@@ -139,9 +177,12 @@ resource "aws_opensearch_domain" "main" {
     volume_size = 10
   }
 
-  vpc_options {
-    subnet_ids         = data.aws_subnets.main.ids
-    security_group_ids = [aws_security_group.main.id]
+  dynamic "vpc_options" {
+    for_each = var.vpc-id == null ? {} : { 1 : 1 }
+    content {
+      subnet_ids         = data.aws_subnets.main.ids
+      security_group_ids = [aws_security_group.main[0].id]
+    }
   }
 
   # cognito_options {
@@ -246,6 +287,21 @@ EOT
     }
   }
 }
+
+resource "aws_opensearch_domain_policy" "main" {
+  domain_name = aws_opensearch_domain.main.domain_name
+  access_policies = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "es:*"
+      Principal = "*"
+      Effect    = "Allow"
+      Resource  = "${aws_opensearch_domain.main.arn}/*"
+      # Description = "Allow full anonymous access to all resources in the domain"
+    }]
+  })
+}
+
 
 output "arn" {
   value = aws_opensearch_domain.main.arn
