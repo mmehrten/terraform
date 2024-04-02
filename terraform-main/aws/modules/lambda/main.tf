@@ -3,15 +3,16 @@
 */
 
 resource "aws_iam_role_policy" "main" {
-  count  = var.policy == null ? 0 : 1
+  count  = var.policy == null || var.role-arn != null ? 0 : 1
   name   = "${var.app-shorthand-name}.iam.role.lambda.${var.name}"
-  role   = aws_iam_role.main.id
+  role   = aws_iam_role.main[0].id
   policy = var.policy
 }
 
 resource "aws_iam_role_policy" "ec2" {
-  name = "${var.app-shorthand-name}.iam.role.lambda.${var.name}.ec2"
-  role = aws_iam_role.main.id
+  count = var.role-arn != null ? 0 : 1
+  name  = "${var.app-shorthand-name}.iam.role.lambda.${var.name}.ec2"
+  role  = aws_iam_role.main[0].id
   policy = jsonencode(
     {
       "Version" : "2012-10-17",
@@ -48,6 +49,7 @@ resource "aws_iam_role_policy" "ec2" {
 
 
 resource "aws_iam_role" "main" {
+  count               = var.role-arn != null ? 0 : 1
   name                = "${var.app-shorthand-name}.iam.role.lambda.${var.name}"
   managed_policy_arns = []
   assume_role_policy  = <<EOF
@@ -72,7 +74,7 @@ data "archive_file" "main" {
 }
 
 resource "aws_security_group" "main" {
-  count       = var.subnet-ids != null ? 1 : 0
+  count       = var.subnet-ids != null && var.vpc-id != null ? 1 : 0
   name        = "${var.base-name}.sg.lambda.${var.name}"
   description = "Security group for Lambda."
   vpc_id      = var.vpc-id
@@ -89,7 +91,7 @@ resource "aws_security_group" "main" {
 resource "aws_lambda_function" "main" {
   filename         = "${var.name}.zip"
   function_name    = var.name
-  role             = aws_iam_role.main.arn
+  role             = var.role-arn != null ? var.role-arn : aws_iam_role.main[0].arn
   handler          = var.handler
   source_code_hash = data.archive_file.main.output_base64sha256
   runtime          = var.runtime
@@ -97,25 +99,33 @@ resource "aws_lambda_function" "main" {
   environment {
     variables = var.environment
   }
-  vpc_config {
-    subnet_ids         = var.subnet-ids
-    security_group_ids = concat(var.security-group-ids, [for o in aws_security_group.main : o.id])
+  dynamic "vpc_config" {
+    for_each = var.vpc-id == null ? {} : { 1 : 1 }
+    content {
+      subnet_ids         = var.subnet-ids
+      security_group_ids = concat(var.security-group-ids, [for o in aws_security_group.main : o.id])
+    }
   }
   layers = var.layer_arns
-
 }
 
 output "lambda_name" {
+  value = aws_lambda_function.main.function_name
+}
+output "function_name" {
   value = aws_lambda_function.main.function_name
 }
 output "lambda_arn" {
   value = aws_lambda_function.main.arn
 }
 output "iam_arn" {
-  value = aws_iam_role.main.arn
+  value = var.role-arn != null ? var.role-arn : aws_iam_role.main[0].arn
+}
+output "iam_role_arn" {
+  value = var.role-arn != null ? var.role-arn : aws_iam_role.main[0].arn
 }
 
 output "iam_role_id" {
-  value = aws_iam_role.main.id
+  value = var.role-arn != null ? split("/", var.role-arn)[1] : aws_iam_role.main[0].id
 }
 

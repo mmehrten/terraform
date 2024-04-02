@@ -1,7 +1,13 @@
 variable "policy" {
   description = "The IAM role policy block for the execution role."
   type        = string
-  default = null
+  default     = null
+}
+
+variable "role-arn" {
+  description = "The IAM role to use, if not creating a new one."
+  type        = string
+  default     = null
 }
 
 variable "name" {
