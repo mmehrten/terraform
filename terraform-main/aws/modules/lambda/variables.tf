@@ -62,3 +62,8 @@ variable "vpc-id" {
   type        = string
   default     = null
 }
+variable "memory-size" {
+  description = "Memory for the Lambda function in MB"
+  type        = number
+  default     = 128
+}

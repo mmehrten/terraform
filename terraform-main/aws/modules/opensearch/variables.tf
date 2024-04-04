@@ -16,3 +16,8 @@ variable "domain-version" {
   type        = string
   default     = "OpenSearch_2.11"
 }
+variable "ultrawarm-node-count" {
+  type = number
+  default = 2
+  description = "Number of ultrawarm nodes to create"
+}

@@ -16,7 +16,8 @@ variable "opensearch-master-password" {
   default     = null
 }
 variable "vpc-id" {
-  type = string
+  type    = string
+  default = null
 }
 variable "remote-vpc-id" {
   type    = string
@@ -30,4 +31,9 @@ variable "use-cross-region" {
   default     = false
   type        = bool
   description = "Whether or not to create a cross-region cluster"
+}
+variable "ultrawarm-node-count" {
+  type        = number
+  default     = 2
+  description = "Number of ultrawarm nodes to create"
 }

@@ -158,11 +158,11 @@ resource "aws_opensearch_domain" "main" {
     dedicated_master_type    = "m5.large.search"
     dedicated_master_count   = 3
 
-    warm_enabled = true
-    warm_count   = 2
-    warm_type    = "ultrawarm1.medium.search"
+    warm_enabled = var.ultrawarm-node-count > 0 ? true : false 
+    warm_count   = var.ultrawarm-node-count > 0 ? var.ultrawarm-node-count : null  
+    warm_type    = var.ultrawarm-node-count > 0 ? "ultrawarm1.medium.search": null
     cold_storage_options {
-      enabled = true
+      enabled = var.ultrawarm-node-count > 0 ? true : false
     }
 
     # multi_az_with_standby_enabled = true
