@@ -15,5 +15,9 @@ variable "instance-count" {
   description = "Number of instances in the cluster"
   type        = number
   default     = 2
-
+}
+variable "engine-version" {
+  description = "PostgreSQL engine version"
+  type        = string
+  default     = "14.5"
 }

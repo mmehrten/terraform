@@ -2,6 +2,10 @@
 * Create a rds culster.
 */
 
+locals {
+  engine_major_version = split(".", var.engine-version)[0]
+}
+
 resource "aws_security_group" "main" {
   name        = "${var.base-name}.sg.rds-pg"
   description = "Security group for rds clusters."
@@ -51,12 +55,30 @@ resource "aws_kms_alias" "alias" {
 }
 
 resource "aws_db_parameter_group" "main" {
-  name   = replace("${var.base-name}.rds", ".", "-")
-  family = "aurora-postgresql15"
+  name   = replace("${var.base-name}.rds${local.engine_major_version}", ".", "-")
+  # family = "aurora-postgresql15"
+  family = "aurora-postgresql${local.engine_major_version}"
 
   parameter {
     name  = "log_connections"
     value = "1"
+  }
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_rds_cluster_parameter_group" "main" {
+  name   = replace("${var.base-name}.rds${local.engine_major_version}", ".", "-")
+  # family = "aurora-postgresql15"
+  family = "aurora-postgresql${local.engine_major_version}"
+
+  parameter {
+    name  = "log_connections"
+    value = "1"
+  }
+  lifecycle {
+    create_before_destroy = true
   }
 }
 
@@ -68,7 +90,7 @@ resource "aws_db_subnet_group" "main" {
 resource "aws_rds_cluster" "main" {
   cluster_identifier                  = replace("${var.base-name}.rds.${var.database-name}", ".", "-")
   engine                              = "aurora-postgresql"
-  engine_version                      = "15"
+  engine_version                      = "${var.engine-version}"
   availability_zones                  = [for k, v in data.aws_subnet.main : v.availability_zone]
   database_name                       = "dev"
   master_username                     = "dev"
@@ -81,6 +103,9 @@ resource "aws_rds_cluster" "main" {
   storage_encrypted                   = true
   iam_database_authentication_enabled = true
   vpc_security_group_ids              = [aws_security_group.main.id]
+  db_cluster_parameter_group_name = aws_rds_cluster_parameter_group.main.name
+  db_instance_parameter_group_name = aws_db_parameter_group.main.name
+  allow_major_version_upgrade = true
 }
 
 resource "aws_rds_cluster_instance" "main" {
