@@ -6,6 +6,9 @@ resource "aws_acm_certificate" "main" {
   certificate_authority_arn = var.pca-arn
   domain_name               = var.domain-name
   subject_alternative_names = var.subject-alternative-names
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 output "arn" {

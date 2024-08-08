@@ -28,6 +28,24 @@ socket.request.max.bytes=104857600
 socket.send.buffer.bytes=102400
 unclean.leader.election.enable=true
 zookeeper.session.timeout.ms=18000
-allow.everyone.if.no.acl.found=false
+allow.everyone.if.no.acl.found=true
 EOF
+}
+
+variable "kafka-version" {
+  default     = "3.5.1"
+  type        = string
+  description = "Kafka cluster version"
+}
+
+variable "enable-vpc-connectivity" {
+  type        = bool
+  default     = false
+  description = "Enable VPC connectivity for the cluster"
+}
+
+variable "security-group-ids" {
+  type        = list(string)
+  default     = []
+  description = "Security group(s) to use with the cluster"
 }

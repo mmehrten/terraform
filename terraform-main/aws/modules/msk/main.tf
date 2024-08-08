@@ -3,6 +3,7 @@
 */
 
 resource "aws_security_group" "main" {
+  count       = length(var.security-group-ids) == 0 ? 1 : 0
   name        = "${var.base-name}.sg.msk"
   description = "Security group for msk clusters."
   vpc_id      = var.vpc-id
@@ -55,7 +56,7 @@ resource "aws_msk_configuration" "main" {
 }
 resource "aws_msk_cluster" "main" {
   cluster_name           = replace("${var.base-name}.msk.cluster", ".", "-")
-  kafka_version          = "3.5.1"
+  kafka_version          = var.kafka-version
   number_of_broker_nodes = 3
 
   configuration_info {
@@ -70,17 +71,20 @@ resource "aws_msk_cluster" "main" {
         volume_size = 100
       }
     }
-    security_groups = [aws_security_group.main.id]
+    security_groups = length(var.security-group-ids) > 0 ? var.security-group-ids : [aws_security_group.main[0].id]
     connectivity_info {
       public_access {
         type = "DISABLED"
       }
-      vpc_connectivity {
-        client_authentication {
-          tls = length(var.tls-certificate-arns) > 0 ? true : false
-          sasl {
-            iam   = true
-            scram = true
+      dynamic "vpc_connectivity" {
+        for_each = { for o in var.enable-vpc-connectivity ? [1] : [] : o => o }
+        content {
+          client_authentication {
+            tls = length(var.tls-certificate-arns) > 0 ? true : false
+            sasl {
+              iam   = true
+              scram = true
+            }
           }
         }
       }
@@ -136,7 +140,9 @@ resource "aws_iam_role" "main" {
         {
           "Action" : "sts:AssumeRole",
           "Principal" : {
-            "Service" : ["lambda.amazonaws.com", "kafkaconnect.amazonaws.com"]
+            "Service" : ["lambda.amazonaws.com"]
+            # Commercial only
+            # "kafkaconnect.amazonaws.com"]
           },
           "Effect" : "Allow"
         }
@@ -272,5 +278,5 @@ output "broker_nodes" {
   value = data.aws_msk_broker_nodes.main.node_info_list
 }
 output "security_group_id" {
-  value = aws_security_group.main.id
+  value = length(var.security-group-ids) > 0 ? var.security-group-ids[0] : aws_security_group.main[0].id
 }
