@@ -18,11 +18,14 @@ module "cluster" {
   source = "../terraform-main/aws/modules/ecs-cluster"
 }
 
-data "aws_subnet_ids" "public" {
-  vpc_id = var.vpc-id
+data "aws_subnets" "public" {
   filter {
     name   = "tag:Name"
     values = ["*public*"]
+  }
+  filter {
+    name   = "vpc-id"
+    values = [var.vpc-id]
   }
 }
 
@@ -68,7 +71,7 @@ module "grafana" {
   partition          = var.partition
 
   vpc-id                         = var.vpc-id
-  subnet-ids                     = data.aws_subnet_ids.public.ids
+  subnet-ids                     = data.aws_subnets.public.ids
   cluster-id                     = module.cluster.id
   service-discovery-namespace-id = aws_service_discovery_private_dns_namespace.main.id
   source                         = "../terraform-main/aws/modules/grafana-ecs"
@@ -85,7 +88,7 @@ module "prometheus" {
   partition          = var.partition
 
   vpc-id                         = var.vpc-id
-  subnet-ids                     = data.aws_subnet_ids.public.ids
+  subnet-ids                     = data.aws_subnets.public.ids
   cluster-id                     = module.cluster.id
   service-discovery-namespace-id = aws_service_discovery_private_dns_namespace.main.id
   source                         = "../terraform-main/aws/modules/prometheus-ecs"
