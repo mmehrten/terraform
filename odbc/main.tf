@@ -97,6 +97,15 @@ resource "aws_iam_policy" "ecs_task_custom_policy" {
         "ssmmessages:OpenDataChannel"
       ],
       "Resource": "*"
+    },
+    {
+      "Sid": "AllowMSK",
+      "Effect": "Allow",
+      "Action": [
+        "kafka:*",
+        "kafka-cluster:*"
+      ],
+      "Resource": "*"
     }
   ]
 }
@@ -127,21 +136,9 @@ resource "aws_iam_role_policy_attachment" "task_custom" {
   role       = aws_iam_role.ecs_task_role.name
   policy_arn = aws_iam_policy.ecs_task_custom_policy.arn
 }
-resource "aws_iam_role_policy_attachment" "task_ecr" {
-  role       = aws_iam_role.ecs_task_role.name
-  policy_arn = "arn:${var.partition}:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"
-}
-resource "aws_iam_role_policy_attachment" "task_cloudwatch" {
-  role       = aws_iam_role.ecs_task_role.name
-  policy_arn = "arn:${var.partition}:iam::aws:policy/CloudWatchFullAccess"
-}
 resource "aws_iam_role_policy_attachment" "task_ssm_ro" {
   role       = aws_iam_role.ecs_task_role.name
   policy_arn = "arn:${var.partition}:iam::aws:policy/AmazonSSMReadOnlyAccess"
-}
-resource "aws_iam_role_policy_attachment" "task_execution_custom" {
-  role       = aws_iam_role.ecs_task_execution_role.name
-  policy_arn = aws_iam_policy.ecs_task_custom_policy.arn
 }
 resource "aws_iam_role_policy_attachment" "task_execution_ecr" {
   role       = aws_iam_role.ecs_task_execution_role.name
@@ -151,10 +148,7 @@ resource "aws_iam_role_policy_attachment" "task_execution_cloudwatch" {
   role       = aws_iam_role.ecs_task_execution_role.name
   policy_arn = "arn:${var.partition}:iam::aws:policy/CloudWatchFullAccess"
 }
-resource "aws_iam_role_policy_attachment" "task_execution_ssm_ro" {
-  role       = aws_iam_role.ecs_task_execution_role.name
-  policy_arn = "arn:${var.partition}:iam::aws:policy/AmazonSSMReadOnlyAccess"
-}
+
 
 resource "aws_cloudwatch_log_group" "main" {
   name              = "/ecs/odbc/"

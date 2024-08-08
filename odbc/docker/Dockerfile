@@ -5,7 +5,7 @@ WORKDIR /odbc
 
 # Set up apt
 RUN apt-get update
-RUN apt install -y curl lsb-release wget gpg less
+RUN apt install -y curl lsb-release wget gpg less jq openjdk-17-jdk git vim dnsutils 
 
 # MSSQL
 RUN curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg \
@@ -24,7 +24,8 @@ RUN apt install -y odbc-postgresql
 RUN apt install -y python3.12 python3-pip python3.12-venv \
     && python3.12 -m venv default 
 
-RUN default/bin/pip install pyodbc requests ipython opensearch-py tabulate black isort pytest retry pyyaml pytz munch click tqdm 
+COPY requirements.txt .
+RUN default/bin/pip install -r requirements.txt
 
 RUN echo "source $(pwd)/default/bin/activate" >> ~/.profile
 ENTRYPOINT [ "sleep", "infinity" ]
