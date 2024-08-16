@@ -49,3 +49,9 @@ variable "security-group-ids" {
   default     = []
   description = "Security group(s) to use with the cluster"
 }
+
+variable "instance-type" {
+  description = "The instance type to use"
+  type = string
+  default = "kafka.m5.large"
+}

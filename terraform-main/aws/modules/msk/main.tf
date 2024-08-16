@@ -64,7 +64,7 @@ resource "aws_msk_cluster" "main" {
     revision = aws_msk_configuration.main.latest_revision
   }
   broker_node_group_info {
-    instance_type  = "kafka.m5.large"
+    instance_type  = var.instance-type
     client_subnets = data.aws_subnets.main.ids
     storage_info {
       ebs_storage_info {
